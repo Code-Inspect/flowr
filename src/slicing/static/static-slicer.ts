@@ -23,6 +23,7 @@ import objectHash from 'object-hash'
 import { DefaultMap } from '../../util/defaultmap'
 import { LocalScope } from '../../dataflow/environments/scopes'
 import { convertAllSlicingCriteriaToIds, DecodedCriteria, SlicingCriteria } from '../criterion'
+import { SourceRange } from '../../util/range'
 
 export const slicerLogger = log.getSubLogger({ name: 'slicer' })
 
@@ -65,7 +66,7 @@ export interface SliceResult {
 	/**
 	 * The ids of the nodes in the normalized ast that are part of the slice.
 	 */
-	result:            Set<NodeId>
+	result:            Set<{ id: NodeId, location: SourceRange }>
 	/**
 	 * The mapping produced to decode the entered criteria
 	 */
@@ -109,10 +110,13 @@ class VisitingQueue {
 		return this.queue.length > 0
 	}
 
-	public status(): Readonly<Pick<SliceResult, 'timesHitThreshold' | 'result'>> {
+	public status(idMap: DecoratedAstMap): Readonly<Pick<SliceResult, 'timesHitThreshold' | 'result'>> {
 		return {
 			timesHitThreshold: this.timesHitThreshold,
-			result:            new Set(this.seen.values())
+			result:            new Set([...this.seen.values()].map(i => ({
+				id:       i,
+				location: idMap.get(i)?.location ?? { start: { line: 0, column: 0 }, end: { line: 0, column: 0 } }
+			})))
 		}
 	}
 }
@@ -179,7 +183,7 @@ export function staticSlicing(dataflowGraph: DataflowGraph, ast: NormalizedAst, 
 	}
 
 	// slicerLogger.trace(`static slicing produced: ${JSON.stringify([...seen])}`)
-	return { ...queue.status(), decodedCriteria }
+	return { ...queue.status(ast.idMap), decodedCriteria }
 }
 
 

@@ -12,7 +12,7 @@ import {
 	CommonSlicerMeasurements,
 	PerSliceMeasurements,
 	PerSliceStats, SlicerStats,
-	stats2string, summarizeAllSummarizedStats, SummarizedMeasurement, SummarizedSlicerStats,
+	stats2string, summarizeAllSummarizedStats, SummarizedSlicerStats,
 	summarizeSlicerStats, UltimateSlicerStats, ultimateStats2String
 } from '../benchmark'
 import fs from 'fs'
@@ -21,6 +21,7 @@ import { escape } from '../statistics'
 import { jsonReplacer } from '../util/json'
 import { processCommandLineArgs } from './common'
 import { MergeableRecord } from '../util/objects'
+import { SummarizedMeasurement } from '../util/summarizer/benchmark/data';
 
 export interface SummarizerCliOptions {
 	verbose:         boolean

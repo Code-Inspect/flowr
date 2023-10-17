@@ -213,11 +213,12 @@ export class SteppingSlicer<InterestedIn extends StepName | undefined = typeof L
 				step = guardStep('slice')
 				result = executeSingleSubStep(step, (this.results.dataflow as DataflowInformation).graph, this.results.normalize as NormalizedAst, this.criterion)
 				break
-			case 4:
+			case 4: {
 				step = guardStep('reconstruct')
-				result = executeSingleSubStep(step, this.results.normalize as NormalizedAst<NoInfo>, (this.results.slice as SliceResult).result)
+				const dirtyMap = new Set([...(this.results.slice as SliceResult).result].map(({ id }) => id))
+				result = executeSingleSubStep(step, this.results.normalize as NormalizedAst<NoInfo>, dirtyMap)
 				break
-			default:
+			} default:
 				throw new Error(`Unknown step ${this.stepCounter}, reaching this should not happen!`)
 		}
 		return { step, result }

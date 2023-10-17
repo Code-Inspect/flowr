@@ -4,10 +4,9 @@
  */
 import { guard } from '../../util/assert'
 import { ElapsedTime, PerSliceMeasurements } from './stats'
+
 import {
-	SummarizedMeasurement
-} from '../../util/summarizer/benchmark/benchmark-summarizer'
-import {
+	SummarizedMeasurement,
 	SummarizedPerSliceStats,
 	SummarizedSlicerStats,
 	UltimateSlicerStats
@@ -105,7 +104,7 @@ Slicing summary for ${stats.perSliceMeasurements.numberOfSlices} slice${stats.pe
   Slice creation:             ${printSummarizedMeasurements(stats.perSliceMeasurements, 'static slicing')}
   Reconstruction:             ${printSummarizedMeasurements(stats.perSliceMeasurements, 'reconstruct code')}
   Used Slice Criteria Sizes:  ${printCountSummarizedMeasurements(stats.perSliceMeasurements.sliceCriteriaSizes)}
-  Result Slice Sizes:   
+  Result Slice Sizes:
     Number of lines:                     ${printCountSummarizedMeasurements(stats.perSliceMeasurements.sliceSize.lines)}
     Number of characters:                ${printCountSummarizedMeasurements(stats.perSliceMeasurements.sliceSize.characters)}
     Number of non whitespace characters: ${printCountSummarizedMeasurements(stats.perSliceMeasurements.sliceSize.nonWhitespaceCharacters)}
@@ -149,8 +148,8 @@ Slice summary for:
   Slice creation:             ${formatSummarizedTimeMeasure(stats.perSliceMeasurements.get('static slicing'))}
   Reconstruction:             ${formatSummarizedTimeMeasure(stats.perSliceMeasurements.get('reconstruct code'))}
   Failed to Re-Parse:         ${pad(stats.failedToRepParse)}/${stats.totalSlices}
-  Times hit Threshold:        ${pad(stats.timesHitThreshold)}/${stats.totalSlices} 
-  Reductions (reduced by x%):   
+  Times hit Threshold:        ${pad(stats.timesHitThreshold)}/${stats.totalSlices}
+  Reductions (reduced by x%):
     Number of lines:                     ${formatSummarizedMeasure(stats.reduction.numberOfLines, asPercentage)}
     Number of lines no auto:             ${formatSummarizedMeasure(stats.reduction.numberOfLinesNoAutoSelection, asPercentage)}
     Number of characters:                ${formatSummarizedMeasure(stats.reduction.numberOfCharacters, asPercentage)}

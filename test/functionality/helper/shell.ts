@@ -204,11 +204,11 @@ export function assertSliced(name: string, shell: RShell, input: string, criteri
 			criterion:      criteria,
 		}).allRemainingSteps()
 
-
+		const nodeIds = new Set([...result.slice.result].map(({ id }) => id))
 		try {
 			assert.strictEqual(
 				result.reconstruct.code, expected,
-				`got: ${result.reconstruct.code}, vs. expected: ${expected}, for input ${input} (slice: ${printIdMapping(result.slice.decodedCriteria.map(({ id }) => id), result.normalize.idMap)}), url: ${graphToMermaidUrl(result.dataflow.graph, result.normalize.idMap, true, result.slice.result)}`
+				`got: ${result.reconstruct.code}, vs. expected: ${expected}, for input ${input} (slice: ${printIdMapping(result.slice.decodedCriteria.map(({ id }) => id), result.normalize.idMap)}), url: ${graphToMermaidUrl(result.dataflow.graph, result.normalize.idMap, true, nodeIds)}`
 			)
 		} catch(e) {
 			console.error('vis-got:\n', graphToMermaidUrl(result.dataflow.graph, result.normalize.idMap))
