@@ -18,3 +18,15 @@ export function collectAllIds<OtherInfo>(nodes: RNode<OtherInfo & ParentInformat
 	})
 	return ids
 }
+
+export function countAllNodes<OtherInfo>(nodes: RNode<OtherInfo & ParentInformation> | (RNode<OtherInfo & ParentInformation> | null | undefined)[] | undefined, stop: (node: RNode<OtherInfo & ParentInformation>)  => boolean = () => false): number {
+	let count = 0
+	visitAst(nodes, (node) => {
+		if(stop(node)) {
+			return true
+		}
+		count++
+		return false
+	})
+	return count
+}

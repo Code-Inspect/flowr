@@ -4,6 +4,7 @@ import { Writable } from 'ts-essentials'
 import { SourcePosition } from '../../../../util/range'
 import { MergeableRecord } from '../../../../util/objects'
 import {
+	countAllNodes,
 	ParentInformation,
 	RFunctionDefinition,
 	RNodeWithParent,
@@ -41,7 +42,8 @@ export interface SingleFunctionDefinitionInformation extends MergeableRecord {
 	length:   {
 		lines:                   number,
 		characters:              number,
-		nonWhitespaceCharacters: number
+		nonWhitespaceCharacters: number,
+		normalizedTokens:        number
 	}
 }
 
@@ -154,7 +156,8 @@ function visitDefinitions(info: FunctionDefinitionInfo, input: FeatureProcessorI
 				length:             {
 					lines:                   lexemeSplit?.length ?? -1,
 					characters:              lexeme?.length ?? -1,
-					nonWhitespaceCharacters: lexeme?.replaceAll(/\s/g, '').length ?? 0
+					nonWhitespaceCharacters: lexeme?.replaceAll(/\s/g, '').length ?? 0,
+					normalizedTokens:        countAllNodes(node)
 				}
 			})
 		}, node => {
