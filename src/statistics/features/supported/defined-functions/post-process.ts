@@ -26,7 +26,8 @@ interface FunctionDefinitionSummaryInformation<Measurement> {
 	length: {
 		lines:              Measurement,
 		chars:              Measurement,
-		nonWhitespaceChars: Measurement
+		nonWhitespaceChars: Measurement,
+		normalizedTokens:   Measurement
 	},
 	returns: {
 		explicit:     Measurement
@@ -54,6 +55,7 @@ function getFnDefCsv(idx: number | string, info: FunctionDefinitionSummaryInform
 		+ `,${summarizedMeasurement2Csv(summarizeMeasurement(info.length.lines.flat()))}`
 		+ `,${summarizedMeasurement2Csv(summarizeMeasurement(info.length.chars.flat()))}`
 		+ `,${summarizedMeasurement2Csv(summarizeMeasurement(info.length.nonWhitespaceChars.flat()))}`
+		+ `,${summarizedMeasurement2Csv(summarizeMeasurement(info.length.normalizedTokens.flat()))}`
 		+ `,${summarizedMeasurement2Csv(summarizeMeasurement(info.returns.explicit.flat()))}`
 		+ `,${summarizedMeasurement2Csv(summarizeMeasurement(info.returns.implicit.flat()))}`
 		+ `,${summarizedMeasurement2Csv(summarizeMeasurement(info.returns.onlyExplicit.flat()))}`
@@ -84,7 +86,7 @@ function retrievePerFileDefinitionInformation(featureRoot: string, info: Map<str
 
 	const fnOutStream = fs.createWriteStream(path.join(outputPath, 'function-definitions.csv'))
 
-	const prefixes = ['total', 'params', 'length-lines', 'length-chars', 'length-non-ws-chars', 'return-explicit', 'return-implicit', 'return-only-explicit', 'return-only-implicit', 'exit-points-line-crac', 'def-line-frac']
+	const prefixes = ['total', 'params', 'length-lines', 'length-chars', 'length-non-ws-chars', 'length-norm-tokens', 'return-explicit', 'return-implicit', 'return-only-explicit', 'return-only-implicit', 'exit-points-line-crac', 'def-line-frac']
 	const others = prefixes.flatMap(summarizedMeasurement2CsvHeader).join(',')
 	fnOutStream.write(`counter,${others}\n`)
 	for(const [idx, info] of definitionsPerFile.entries()) {
@@ -94,6 +96,7 @@ function retrievePerFileDefinitionInformation(featureRoot: string, info: Map<str
 		mergedSuperDefinitions.length.lines.push(...info.length.lines)
 		mergedSuperDefinitions.length.chars.push(...info.length.chars)
 		mergedSuperDefinitions.length.nonWhitespaceChars.push(...info.length.nonWhitespaceChars)
+		mergedSuperDefinitions.length.normalizedTokens.push(...info.length.normalizedTokens)
 		mergedSuperDefinitions.returns.explicit.push(...info.returns.explicit)
 		mergedSuperDefinitions.returns.implicit.push(...info.returns.implicit)
 		mergedSuperDefinitions.returns.onlyExplicit.push(...info.returns.onlyExplicit)
@@ -178,7 +181,8 @@ function emptyFunctionDefinitionSummary() {
 		length:     {
 			lines:              [],
 			chars:              [],
-			nonWhitespaceChars: []
+			nonWhitespaceChars: [],
+			normalizedTokens:   []
 		},
 		returns: {
 			explicit:     [],
@@ -209,6 +213,7 @@ function processNextLine(data: FunctionDefinitionSummaryInformation<number[]>[],
 		forFile.length.lines.push(length.lines)
 		forFile.length.chars.push(length.characters)
 		forFile.length.nonWhitespaceChars.push(length.nonWhitespaceCharacters)
+		forFile.length.normalizedTokens.push(length.normalizedTokens)
 		const explicits = returns.filter(r => r.explicit)
 		forFile.returns.explicit.push(explicits.length)
 		forFile.returns.implicit.push(returns.length - explicits.length)
