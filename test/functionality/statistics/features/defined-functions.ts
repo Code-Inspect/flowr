@@ -29,7 +29,8 @@ describe('Used Function Definitions', withShell(shell => {
 					length: {
 						lines:                   1,
 						characters:              17,
-						nonWhitespaceCharacters: 14
+						nonWhitespaceCharacters: 14,
+						normalizedTokens:        5
 					}
 				}]]]
 			]
@@ -57,7 +58,8 @@ describe('Used Function Definitions', withShell(shell => {
 					length: {
 						lines:                   1,
 						characters:              6,
-						nonWhitespaceCharacters: 5
+						nonWhitespaceCharacters: 5,
+						normalizedTokens:        5
 					}
 				}]]]
 			]
@@ -83,7 +85,8 @@ describe('Used Function Definitions', withShell(shell => {
 					length: {
 						lines:                   1,
 						characters:              37,
-						nonWhitespaceCharacters: 29
+						nonWhitespaceCharacters: 29,
+						normalizedTokens:        11
 					}
 				}], [{
 					location:           { line: 1, column: 15 },
@@ -95,7 +98,8 @@ describe('Used Function Definitions', withShell(shell => {
 					length: {
 						lines:                   1,
 						characters:              21,
-						nonWhitespaceCharacters: 16
+						nonWhitespaceCharacters: 16,
+						normalizedTokens:        7
 					}
 				}]]]
 			]
@@ -132,7 +136,8 @@ describe('Used Function Definitions', withShell(shell => {
 					length: {
 						lines:                   7,
 						characters:              80,
-						nonWhitespaceCharacters: 62
+						nonWhitespaceCharacters: 62,
+						normalizedTokens:        30
 					}
 				}]]]
 			]
