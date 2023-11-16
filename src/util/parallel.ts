@@ -1,6 +1,6 @@
 /**
  * Tasked with parallelize the benchmarking by calling the given script in an executor-pool style fashion.
- * Now used to parallelize more in _flowR_.
+ * Now used to parallelize more in _extractor_.
  * @module parallel
  */
 import * as cp from 'child_process'

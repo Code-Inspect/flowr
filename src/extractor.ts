@@ -1,7 +1,7 @@
 /**
- * The main script to run flowR.
+ * The main script to run the extractor.
  *
- * If started with arguments it may be used to run a single of the flowR scripts.
+ * If started with arguments it may be used to run a single of the extractor scripts.
  * Otherwise, it will start a REPL that can call these scripts and return their results repeatedly.
  */
 import { log, LogLevel } from './util/log'
@@ -15,17 +15,17 @@ import { ScriptInformation, scripts } from './cli/common'
 import { DeepReadonly } from 'ts-essentials'
 import { version } from '../package.json'
 import { printVersionInformation } from './cli/repl/commands/version'
-import { FlowRServer } from './cli/repl/server/server'
+import { ExtractorServer } from './cli/repl/server/server'
 import { standardReplOutput } from './cli/repl/commands'
 
 const scriptsText = Array.from(Object.entries(scripts).filter(([, {type}]) => type === 'master script'), ([k,]) => k).join(', ')
 
-export const toolName = 'flowr'
+export const toolName = 'extractor'
 
 export const optionDefinitions: OptionDefinition[] = [
 	{ name: 'verbose',      alias: 'v', type: Boolean, description: 'Run with verbose logging (will be passed to the corresponding script)' },
 	{ name: 'help',         alias: 'h', type: Boolean, description: 'Print this usage guide (or the guide of the corresponding script)' },
-	{ name: 'version',      alias: 'V', type: Boolean, description: 'Provide information about the version of flowR as well as its underlying R system and exit.' },
+	{ name: 'version',      alias: 'V', type: Boolean, description: 'Provide information about the version of the extractor as well as its underlying R system and exit.' },
 	{ name: 'server',                   type: Boolean, description: 'Do not drop into a repl, but instead start a server on the given port (default: 1042) and listen for messages.' },
 	{ name: 'port' ,                    type: Number,  description: 'The port to listen on, if --server is given.', defaultValue: 1042, typeLabel: '{underline port}' },
 	{ name: 'execute',      alias: 'e', type: String,  description: 'Execute the given command and exit. Use a semicolon ";" to separate multiple commands.', typeLabel: '{underline command}', multiple: false },
@@ -33,7 +33,7 @@ export const optionDefinitions: OptionDefinition[] = [
 	{ name: 'script',       alias: 's', type: String,  description: `The sub-script to run (${scriptsText})`, multiple: false, defaultOption: true, typeLabel: '{underline files}', defaultValue: undefined },
 ]
 
-export interface FlowrCliOptions {
+export interface ExtractorCliOptions {
 	verbose:   boolean
 	version:   boolean
 	help:      boolean
@@ -46,7 +46,7 @@ export interface FlowrCliOptions {
 
 export const optionHelp = [
 	{
-		header:  `flowR (version ${String(version)})`,
+		header:  `extractor (version ${String(version)})`,
 		content: 'A static dataflow analyzer and program slicer for R programs'
 	},
 	{
@@ -65,7 +65,7 @@ export const optionHelp = [
 	}
 ]
 
-const options = commandLineArgs(optionDefinitions) as FlowrCliOptions
+const options = commandLineArgs(optionDefinitions) as ExtractorCliOptions
 
 log.updateSettings(l => l.settings.minLevel = options.verbose ? LogLevel.Trace : LogLevel.Error)
 log.info('running with options', options)
@@ -148,7 +148,7 @@ async function mainServer() {
 	// hook some handlers
 	process.on('SIGINT', end)
 	process.on('SIGTERM', end)
-	await new FlowRServer(shell).start(options.port)
+	await new ExtractorServer(shell).start(options.port)
 }
 
 if(options.server) {

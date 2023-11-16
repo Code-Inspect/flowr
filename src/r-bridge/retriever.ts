@@ -60,12 +60,12 @@ export async function retrieveXmlFromRCode(request: RParseRequest, shell: RShell
 
 	const suffix = request.request === 'file' ? ', encoding="utf-8"' : ''
 
-	shell.sendCommands(`flowr_output <- flowr_parsed <- "${ErrorMarker}"`,
+	shell.sendCommands(`extractor_output <- extractor_parsed <- "${ErrorMarker}"`,
 		// now, try to retrieve the ast
-		`try(flowr_parsed<-parse(${request.request}=${JSON.stringify(request.content)},keep.source=TRUE${suffix}),silent=FALSE)`,
-		'try(flowr_output<-xmlparsedata::xml_parse_data(flowr_parsed,includeText=TRUE,pretty=FALSE),silent=FALSE)'
+		`try(extractor_parsed<-parse(${request.request}=${JSON.stringify(request.content)},keep.source=TRUE${suffix}),silent=FALSE)`,
+		'try(extractor_output<-xmlparsedata::xml_parse_data(extractor_parsed,includeText=TRUE,pretty=FALSE),silent=FALSE)'
 	)
-	const xml = await shell.sendCommandWithOutput(`cat(flowr_output,${ts2r(shell.options.eol)})`)
+	const xml = await shell.sendCommandWithOutput(`cat(extractor_output,${ts2r(shell.options.eol)})`)
 	const output = xml.join(shell.options.eol)
 	guard(output !== ErrorMarker, () => `unable to parse R code (see the log for more information) for request ${JSON.stringify(request)}}`)
 	return output
@@ -97,7 +97,7 @@ export type TokenMap = DeepReadonly<Record<string, string>>
  * Needs to be called *after*  {@link retrieveXmlFromRCode} (or {@link retrieveNormalizedAstFromRCode})
  */
 export async function retrieveNumberOfRTokensOfLastParse(shell: RShell): Promise<number> {
-	const result = await shell.sendCommandWithOutput(`cat(nrow(getParseData(flowr_parsed)),${ts2r(shell.options.eol)})`)
+	const result = await shell.sendCommandWithOutput(`cat(nrow(getParseData(extractor_parsed)),${ts2r(shell.options.eol)})`)
 	guard(result.length === 1, () => `expected exactly one line to obtain the number of R tokens, but got: ${JSON.stringify(result)}`)
 	return Number(result[0])
 }

@@ -1,27 +1,27 @@
 import { RShell } from '../../../r-bridge'
 import { retrieveVersionInformation, VersionInformation } from '../commands/version'
-import { FlowRServerConnection } from './connection'
+import { ExtractorServerConnection } from './connection'
 import { getUnnamedSocketName, sendMessage } from './send'
-import { FlowrHelloResponseMessage } from './messages/hello'
-import { FlowrErrorMessage } from './messages/error'
+import { ExtractorHelloResponseMessage } from './messages/hello'
+import { ExtractorErrorMessage } from './messages/error'
 import { NetServer, Server, Socket } from './net'
-import { FlowrLogger } from '../../../util/log'
+import { ExtractorLogger } from '../../../util/log'
 
 // we detach from the main logger so that it can have its own switch
-export const serverLog = new FlowrLogger({ name: 'server' })
+export const serverLog = new ExtractorLogger({ name: 'server' })
 
 /**
  * This class controls the TCP server, which can be started by calling {@link start}.
  * Afterward, each incoming connection will be greeted with {@link helloClient} and from
- * thereon be handled by a {@link FlowRServerConnection}.
+ * thereon be handled by a {@link ExtractorServerConnection}.
  */
-export class FlowRServer {
+export class ExtractorServer {
 	private readonly server:    Server
 	private readonly shell:     RShell
 	private versionInformation: VersionInformation | undefined
 
 	/** maps names to the respective connection */
-	private connections = new Map<string, FlowRServerConnection>()
+	private connections = new Map<string, ExtractorServerConnection>()
 	private nameCounter = 0
 
 	constructor(shell: RShell, server: Server = new NetServer()) {
@@ -44,7 +44,7 @@ export class FlowRServer {
 		const name = `client-${this.nameCounter++}`
 		serverLog.info(`Client connected: ${getUnnamedSocketName(c)} as "${name}"`)
 
-		this.connections.set(name, new FlowRServerConnection(c, name, this.shell))
+		this.connections.set(name, new ExtractorServerConnection(c, name, this.shell))
 		helloClient(c, name, this.versionInformation)
 		c.on('close', () => {
 			this.connections.delete(name)
@@ -55,7 +55,7 @@ export class FlowRServer {
 
 
 function notYetInitialized(c: Socket, id: string | undefined) {
-	sendMessage<FlowrErrorMessage>(c, {
+	sendMessage<ExtractorErrorMessage>(c, {
 		id,
 		type:   'error',
 		fatal:  true,
@@ -65,7 +65,7 @@ function notYetInitialized(c: Socket, id: string | undefined) {
 }
 
 function helloClient(c: Socket, name: string, versionInformation: VersionInformation) {
-	sendMessage<FlowrHelloResponseMessage>(c, {
+	sendMessage<ExtractorHelloResponseMessage>(c, {
 		id:         undefined,
 		type:       'hello',
 		clientName: name,

@@ -11,7 +11,7 @@
 
 All of these benchmarks are meant to be executed on a linux machine, preferably the continuous integration environment. Hence, all scripts are written in bash and allowed to use tools to symlink etc.
 
-Currently, tests are not repeated, so all results are subjects to the variations in the CI environment. For the results, see: <https://code-inspect.github.io/flowr/wiki/stats/benchmark>.
+Currently, tests are not repeated, so all results are subjects to the variations in the CI environment. 
 
 ## How to Run?
 

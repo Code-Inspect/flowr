@@ -27,7 +27,7 @@ export const standardReplOutput: ReplOutput = {
 
 /**
  * Content of a single command in the repl.
- * The command may execute an external script or simply call *flowR* functions.
+ * The command may execute an external script or simply call *extractor* functions.
  */
 export interface ReplCommand {
 	/** Aliases of the command (without the leading colon), every alias must be unique (this is checked at runtime) */

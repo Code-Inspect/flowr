@@ -1,7 +1,7 @@
 import { withShell } from '../helper/shell'
 import { fakeSend, withSocket } from '../helper/net'
 import { retrieveVersionInformation } from '../../../src/cli/repl/commands/version'
-import { FlowrHelloResponseMessage } from '../../../src/cli/repl/server/messages/hello'
+import { ExtractorHelloResponseMessage } from '../../../src/cli/repl/server/messages/hello'
 import { assert } from 'chai'
 import { FileAnalysisRequestMessage, FileAnalysisResponseMessageJson } from '../../../src/cli/repl/server/messages/analysis'
 import { DecoratedAstMap, ParentInformation, requestFromInput } from '../../../src/r-bridge'
@@ -14,12 +14,12 @@ import {
 } from '../../../src/cli/repl/server/messages/repl'
 import { extractCFG } from '../../../src/util/cfg'
 
-describe('FlowR Server', withShell(shell => {
+describe('Extractor Server', withShell(shell => {
 	it('Correct Hello Message', withSocket(shell,async socket => {
 		const messages = socket.getMessages()
 		assert.strictEqual(messages.length, 1, 'Expected exactly one message to hello the client')
 
-		const hello = messages[0] as FlowrHelloResponseMessage
+		const hello = messages[0] as ExtractorHelloResponseMessage
 		const knownVersion = await retrieveVersionInformation(shell)
 
 		assert.deepStrictEqual(hello, {
@@ -27,7 +27,7 @@ describe('FlowR Server', withShell(shell => {
 			clientName: 'client-0',
 			versions:   {
 				r:     knownVersion.r,
-				flowr: knownVersion.flowr
+				extractor: knownVersion.extractor
 			}
 		}, 'Expected hello message to have the predefined format')
 	}))

@@ -4,7 +4,7 @@ import { IdMessageBase } from './messages'
 /**
  * The hello message is automatically send by the sever upon connection.
  */
-export interface FlowrHelloResponseMessage extends IdMessageBase {
+export interface ExtractorHelloResponseMessage extends IdMessageBase {
 	type:       'hello',
 	/** The hello message never has an id, it is always undefined */
 	id:         undefined,

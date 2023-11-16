@@ -5,7 +5,7 @@ import { ControlFlowInformation } from '../../../../util/cfg'
 
 /**
  * Send by the client to request an analysis of a given file.
- * Answered by either an {@link FlowrErrorMessage} or a {@link FileAnalysisResponseMessageJson}.
+ * Answered by either an {@link ExtractorErrorMessage} or a {@link FileAnalysisResponseMessageJson}.
  */
 export interface FileAnalysisRequestMessage extends IdMessageBase {
 	type:       'request-file-analysis',
@@ -23,7 +23,7 @@ export interface FileAnalysisRequestMessage extends IdMessageBase {
 	filename?:  string,
 	/** The contents of the file, or an R expression itself (like `1 + 1`), give either this or the `filepath`. */
 	content?:   string
-	/** The filepath on the local machine, accessible to flowR, or simply. Give either this or the `content` */
+	/** The filepath on the local machine, accessible to the extractor, or simply. Give either this or the `content` */
 	filepath?:  string
 	/** Can be used to additionally extract the {@link ControlFlowInformation} of the file, which is not exposed (and not fully calculated) by default. */
 	cfg?:       boolean

@@ -1,2 +1,2 @@
-export { FlowrMessage } from './messages'
+export { ExtractorMessage } from './messages'
 

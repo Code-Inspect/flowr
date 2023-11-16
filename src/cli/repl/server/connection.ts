@@ -8,7 +8,7 @@ import {
 	requestAnalysisMessage
 } from './messages/analysis'
 import { requestSliceMessage, SliceRequestMessage, SliceResponseMessage } from './messages/slice'
-import { FlowrErrorMessage } from './messages/error'
+import { ExtractorErrorMessage } from './messages/error'
 import { Socket } from './net'
 import { serverLog } from './server'
 import { ILogObj, Logger } from 'tslog'
@@ -29,9 +29,9 @@ import { DataflowInformation } from '../../../dataflow/internal/info'
 
 /**
  * Each connection handles a single client, answering to its requests.
- * There is no need to construct this class manually, {@link FlowRServer} will do it for you.
+ * There is no need to construct this class manually, {@link ExtractorServer} will do it for you.
  */
-export class FlowRServerConnection {
+export class ExtractorServerConnection {
 	private readonly socket: Socket
 	private readonly shell:  RShell
 	private readonly name:   string
@@ -82,7 +82,7 @@ export class FlowRServerConnection {
 				this.handleRepl(request.message as ExecuteRequestMessage)
 				break
 			default:
-				sendMessage<FlowrErrorMessage>(this.socket, {
+				sendMessage<ExtractorErrorMessage>(this.socket, {
 					id:     request.message.id,
 					type:   'error',
 					fatal:  true,
@@ -109,7 +109,7 @@ export class FlowRServerConnection {
 		void slicer.allRemainingSteps(false).then(async results => await this.sendFileAnalysisResponse(results, message))
 			.catch(e => {
 				this.logger.error(`[${this.name}] Error while analyzing file ${message.filename ?? 'unknown file'}: ${String(e)}`)
-				sendMessage<FlowrErrorMessage>(this.socket, {
+				sendMessage<ExtractorErrorMessage>(this.socket, {
 					id:     message.id,
 					type:   'error',
 					fatal:  false,
@@ -190,7 +190,7 @@ export class FlowRServerConnection {
 
 		const fileInformation = this.fileMap.get(request.filetoken)
 		if(!fileInformation) {
-			sendMessage<FlowrErrorMessage>(this.socket, {
+			sendMessage<ExtractorErrorMessage>(this.socket, {
 				id:     request.id,
 				type:   'error',
 				fatal:  false,
@@ -208,7 +208,7 @@ export class FlowRServerConnection {
 			})
 		}).catch(e => {
 			this.logger.error(`[${this.name}] Error while analyzing file for token ${request.filetoken}: ${String(e)}`)
-			sendMessage<FlowrErrorMessage>(this.socket, {
+			sendMessage<ExtractorErrorMessage>(this.socket, {
 				id:     request.id,
 				type:   'error',
 				fatal:  false,

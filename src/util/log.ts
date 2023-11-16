@@ -1,7 +1,7 @@
 import { type ILogObj, type ISettingsParam, Logger } from 'tslog'
 import { createStream, type Options } from 'rotating-file-stream'
 
-export class FlowrLogger extends Logger<ILogObj> {
+export class ExtractorLogger extends Logger<ILogObj> {
 	/** by keeping track of all children we can propagate updates of the settings (e.g., in tests) */
 
 	private readonly childLoggers: Logger<ILogObj>[] = []
@@ -26,7 +26,7 @@ export class FlowrLogger extends Logger<ILogObj> {
    * make the logger log to a file as well
    */
 	public logToFile(
-		filename = 'flowr.log',
+		filename = 'extractor.log',
 		options: Options = {
 			size:     '10M',
 			interval: '1d',
@@ -53,8 +53,8 @@ export const enum LogLevel {
 	Fatal = 6
 }
 
-function getActiveLog(): FlowrLogger {
-	return new FlowrLogger({
+function getActiveLog(): ExtractorLogger {
+	return new ExtractorLogger({
 		type:            'pretty',
 		name:            'main',
 		stylePrettyLogs: true,
@@ -66,4 +66,4 @@ function getActiveLog(): FlowrLogger {
 	})
 }
 
-export const log: FlowrLogger = getActiveLog()
+export const log: ExtractorLogger = getActiveLog()

@@ -1,14 +1,14 @@
 /**
- * Provides the capability of connecting to the repl of flowr via messages.
+ * Provides the capability of connecting to the repl of the extractor via messages.
  *
  * @module
  */
 import Joi from 'joi'
-import { FlowrHelloResponseMessage } from './hello'
+import { ExtractorHelloResponseMessage } from './hello'
 import { FileAnalysisRequestMessage, FileAnalysisResponseMessageJson } from './analysis'
 import { ExecuteEndMessage, ExecuteIntermediateResponseMessage, ExecuteRequestMessage } from './repl'
 import { SliceRequestMessage, SliceResponseMessage } from './slice'
-import { FlowrErrorMessage } from './error'
+import { ExtractorErrorMessage } from './error'
 
 /**
  * If you send a message it must *not* contain a newline but the message must be terminated by a newline.
@@ -26,7 +26,7 @@ export interface IdMessageBase {
 	id:   string | undefined
 }
 
-export interface MessageDefinition<T extends FlowrMessage | IdMessageBase> {
+export interface MessageDefinition<T extends ExtractorMessage | IdMessageBase> {
 	type:   T['type'] | undefined
 	schema: Joi.Schema
 }
@@ -41,10 +41,10 @@ export const baseMessage: MessageDefinition<IdMessageBase> = {
 }
 
 /**
- * This is the main message type that should be used to represent a message in *flowR*
+ * This is the main message type that should be used to represent a message in *extractor*
  */
-export type FlowrMessage = FlowrHelloResponseMessage
+export type ExtractorMessage = ExtractorHelloResponseMessage
 | FileAnalysisRequestMessage | FileAnalysisResponseMessageJson
 | ExecuteRequestMessage | ExecuteIntermediateResponseMessage | ExecuteEndMessage
 | SliceRequestMessage | SliceResponseMessage
-| FlowrErrorMessage
+| ExtractorErrorMessage

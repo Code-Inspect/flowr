@@ -141,7 +141,7 @@ export class BenchmarkSlicer {
 
 	private async calculateStatsAfterInit(request: RParseRequestFromFile | RParseRequestFromText) {
 		const loadedContent = request.request === 'text' ? request.content : fs.readFileSync(request.content, 'utf-8')
-		// retrieve number of R tokens - flowr_parsed should still contain the last parsed code
+		// retrieve number of R tokens
 		const numberOfRTokens = await retrieveNumberOfRTokensOfLastParse(this.shell)
 
 		guard(this.normalizedAst !== undefined, 'normalizedAst should be defined after initialization')

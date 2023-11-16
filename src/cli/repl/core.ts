@@ -1,5 +1,5 @@
 /**
- * Basically a helper file to allow the main 'flowr' script (located in the source root) to provide its repl
+ * Basically a helper file to allow the main 'extractor' script (located in the source root) to provide its repl
  *
  * @module
  */
@@ -61,7 +61,7 @@ export async function replProcessAnswer(output: ReplOutput, expr: string, shell:
 }
 
 /**
- * Provides a never-ending repl (read-evaluate-print loop) processor that can be used to interact with a {@link RShell} as well as all flowR scripts.
+ * Provides a never-ending repl (read-evaluate-print loop) processor that can be used to interact with a {@link RShell} as well as all extractor scripts.
  *
  * The repl allows for two kinds of inputs:
  * - Starting with a colon `:`, indicating a command (probe `:help`, and refer to {@link commands}) </li>

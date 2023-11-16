@@ -71,7 +71,7 @@ export const STEPS_PER_FILE = {
 		}
 	} satisfies IStep<typeof retrieveXmlFromRCode>,
 	'normalize': {
-		description: 'Normalize the AST to flowR\'s AST (first step of the normalization)',
+		description: 'Normalize the AST to extractor\'s AST (first step of the normalization)',
 		processor:   normalize,
 		required:    'once-per-file',
 		printer:     {

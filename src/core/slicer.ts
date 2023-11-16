@@ -20,7 +20,7 @@ import { StepResults } from './output'
 import { DataflowInformation } from '../dataflow/internal/info'
 
 /**
- * This is ultimately the root of flowR's static slicing procedure.
+ * This is ultimately the root of extractor's static slicing procedure.
  * It clearly defines the steps that are to be executed and splits them into two stages.
  * - `once-per-file`: for steps that are executed once per file. These can be performed *without* the knowledge of a slicing criteria,
  *   and they can be cached and re-used if you want to slice the same file multiple times.

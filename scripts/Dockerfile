@@ -11,9 +11,7 @@ RUN npm install
 RUN npm run build
 
 
-FROM node:20.8-alpine3.17 AS flowR
-
-LABEL author="Florian Sihler" git="https://github.com/Code-Inspect/flowr"
+FROM node:20.8-alpine3.17 AS extractor
 
 WORKDIR /app
 
@@ -28,4 +26,4 @@ RUN npm install --omit=dev
 COPY --from=builder /app/dist/src /app/dist
 RUN rm -rf /app/dist/tsconfig.tsbuildinfo
 
-ENTRYPOINT ["node", "/app/dist/flowr.js"]
+ENTRYPOINT ["node", "/app/dist/extractor.js"]

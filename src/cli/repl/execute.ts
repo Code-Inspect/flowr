@@ -33,7 +33,7 @@ export function stdioCaptureProcessor(stdio: Stdio, onStdOutLine: (msg: string) 
 /**
  * Run the given module with the presented arguments, and wait for it to exit.
  *
- * @param module      - The (flowR) module that you want to use for the fork.
+ * @param module      - The (extractor) module that you want to use for the fork.
  *                      It is probably best to use {@link __dirname} so you can specify the module relative to your
  *                      current one.
  * @param args        - The arguments you want to start your process with.
