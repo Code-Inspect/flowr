@@ -200,17 +200,15 @@ export class DataflowGraph {
 			attribute ??= (from as ReferenceForEdge).used === 'maybe' ? 'maybe' : (to as ReferenceForEdge).used
 
 			// reduce the load on attribute checks
-			if(attribute !== 'maybe') {
-				const fromInfo = this.get(fromId, true)
-				if(fromInfo?.[0].when === 'maybe') {
+			const fromInfo = this.get(fromId, true)
+			if(fromInfo?.[0].when === 'maybe') {
+				log.trace(`automatically promoting edge from ${fromId} to ${toId} as maybe because at least one of the nodes is maybe`)
+				attribute = 'maybe'
+			} else {
+				const toInfo = this.get(toId, true)
+				if(toInfo?.[0].when === 'maybe') {
 					log.trace(`automatically promoting edge from ${fromId} to ${toId} as maybe because at least one of the nodes is maybe`)
 					attribute = 'maybe'
-				} else {
-					const toInfo = this.get(toId, true)
-					if(toInfo?.[0].when === 'maybe') {
-						log.trace(`automatically promoting edge from ${fromId} to ${toId} as maybe because at least one of the nodes is maybe`)
-						attribute = 'maybe'
-					}
 				}
 			}
 		}
