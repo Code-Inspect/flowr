@@ -116,7 +116,7 @@ export const DEFAULT_R_SHELL_OPTIONS: RShellOptions = {
  */
 export class RShell {
 	public readonly options: Readonly<RShellOptions>
-	private session:         RShellSession | undefined
+	private session:         RShellSession
 	private readonly log:    Logger<ILogObj>
 	private versionCache:    SemVer | null = null
 	private tokenMapCache:   TokenMap | null = null
@@ -127,17 +127,8 @@ export class RShell {
 		this.options = deepMergeObject(DEFAULT_R_SHELL_OPTIONS, options)
 		this.log = log.getSubLogger({ name: this.options.sessionName })
 
-		this.lazyInitializeShell()
+		this.session = new RShellSession(this.options, this.log)
 		this.revive()
-	}
-
-	private lazyInitializeShell(): void {
-		void new Promise<void>(resolve => {
-			setTimeout(() => {
-				this.session = new RShellSession(this.options, this.log)
-				resolve()
-			}, 0)
-		})
 	}
 
 	private revive() {
