@@ -33,21 +33,6 @@ export const testWithShell = (msg: string, fn: (shell: RShell, test: Mocha.Conte
 	})
 }
 
-const testShellProvider = makeTestShellProvider()
-
-function makeTestShellProvider(): () => { shell: RShell, packages: Set<string> } {
-	let shell: RShell | undefined = undefined
-	const packages = new Set<string>()
-	return () => {
-		if(shell === undefined) {
-			shell = new RShell()
-			shell.tryToInjectHomeLibPath()
-		}
-
-		return { shell, packages }
-	}
-}
-
 /**
  * produces a shell session for you, can be used within a `describe` block
  * @param fn       - function to use the shell
@@ -55,16 +40,12 @@ function makeTestShellProvider(): () => { shell: RShell, packages: Set<string> }
  */
 export function withShell(fn: (shell: RShell) => void, packages: string[] = ['xmlparsedata']): () => void {
 	return function() {
-		const { shell, packages: loadedPackages } = testShellProvider()
+		const shell = new RShell()
 		// this way we probably do not have to reinstall even if we launch from WebStorm
 		before(async function() {
 			this.timeout('15min')
+			shell.tryToInjectHomeLibPath()
 			for(const pkg of packages) {
-				if(loadedPackages.has(pkg)) {
-					continue
-				}
-				loadedPackages.add(pkg)
-
 				if(!await shell.isPackageInstalled(pkg)) {
 					await testRequiresNetworkConnection(this)
 				}
