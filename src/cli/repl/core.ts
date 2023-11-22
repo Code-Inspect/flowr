@@ -3,7 +3,7 @@
  *
  * @module
  */
-import { RShell } from '../../r-bridge'
+import { RShell, RShellRevive } from '../../r-bridge'
 import readline from 'readline/promises'
 import { bold } from '../../statistics'
 import { prompt } from './prompt'
@@ -76,7 +76,7 @@ export async function replProcessAnswer(output: ReplOutput, expr: string, shell:
  * For the execution, this function makes use of {@link replProcessAnswer}
  *
  */
-export async function repl(shell = new RShell({ revive: 'always' }), rl = readline.createInterface(DEFAULT_REPL_READLINE_CONFIGURATION), output = standardReplOutput) {
+export async function repl(shell = new RShell({ revive: RShellRevive.Always }), rl = readline.createInterface(DEFAULT_REPL_READLINE_CONFIGURATION), output = standardReplOutput) {
 
 	// the incredible repl :D, we kill it with ':quit'
 	// eslint-disable-next-line no-constant-condition,@typescript-eslint/no-unnecessary-condition
