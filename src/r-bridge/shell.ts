@@ -116,7 +116,7 @@ export const DEFAULT_R_SHELL_OPTIONS: RShellOptions = {
  */
 export class RShell {
 	public readonly options: Readonly<RShellOptions>
-	private session:         RShellSession | undefined
+	private session:         RShellSession
 	private readonly log:    Logger<ILogObj>
 	private versionCache:    SemVer | null = null
 	private tokenMapCache:   TokenMap | null = null
@@ -127,17 +127,8 @@ export class RShell {
 		this.options = deepMergeObject(DEFAULT_R_SHELL_OPTIONS, options)
 		this.log = log.getSubLogger({ name: this.options.sessionName })
 
-		this.lazyInitializeShell()
+		this.session = new RShellSession(this.options, this.log)
 		this.revive()
-	}
-
-	private lazyInitializeShell(): void {
-		void new Promise<void>(resolve => {
-			setTimeout(() => {
-				this.session = new RShellSession(this.options, this.log)
-				resolve()
-			}, 0)
-		})
 	}
 
 	private revive() {
@@ -377,35 +368,57 @@ export class RShell {
  * Used to deal with the underlying input-output streams of the R process
  */
 class RShellSession {
-	private readonly bareSession:   ChildProcessWithoutNullStreams
-	private readonly sessionStdOut: readline.Interface
-	private readonly sessionStdErr: readline.Interface
-	private readonly options:       RShellSessionOptions
-	private readonly log:           Logger<ILogObj>
-	private collectionTimeout:      NodeJS.Timeout | undefined
+	private bareSession:       ChildProcessWithoutNullStreams | undefined
+	private sessionStdOut:     readline.Interface | undefined
+	private sessionStdErr:     readline.Interface | undefined
+	private readonly options:  RShellSessionOptions
+	private readonly log:      Logger<ILogObj>
+	private collectionTimeout: NodeJS.Timeout | undefined
+
+	// lazy init state
+	private initialized = false
 
 	public constructor(options: RShellSessionOptions, log: Logger<ILogObj>) {
-		this.bareSession = spawn(options.pathToRExecutable, options.commandLineOptions, {
-			env:         options.env,
-			cwd:         options.cwd,
-			windowsHide: true
-		})
-		this.sessionStdOut = readline.createInterface({
-			input:    this.bareSession.stdout,
-			terminal: false
-		})
-		this.sessionStdErr = readline.createInterface({
-			input:    this.bareSession.stderr,
-			terminal: false
-		})
-		this.onExit(() => { this.end() })
+		this.lazyInitSessions()
+
 		this.options = options
 		this.log = log
-		this.setupRSessionLoggers()
+
+		this.onExit(() => this.end())
+	}
+
+	private lazyInitSessions(): void {
+		const o = this.options
+		void new Promise<void>(resolve => {
+			setTimeout(() => {
+				this.bareSession = spawn(o.pathToRExecutable, o.commandLineOptions, {
+					env:         o.env,
+					cwd:         o.cwd,
+					detached:    false,
+					windowsHide: true
+				})
+				this.sessionStdOut = readline.createInterface({
+					input:    this.bareSession.stdout,
+					terminal: false
+				})
+				this.sessionStdErr = readline.createInterface({
+					input:    this.bareSession.stderr,
+					terminal: false
+				})
+				this.initialized = true
+				resolve()
+				this.setupRSessionLoggers()
+			}, 0)
+		})
+	}
+
+	private ensureInit(): void {
+		while(!this.initialized);
 	}
 
 	public write(data: string): void {
-		this.bareSession.stdin.write(data)
+		this.ensureInit()
+		this.bareSession!.stdin.write(data)
 	}
 
 	public writeLine(data: string): void {
@@ -453,8 +466,9 @@ class RShellSession {
 			action?.()
 		}).finally(() => {
 			this.removeListener(from, 'line', handler)
-			this.bareSession.removeListener('exit', error)
-			this.bareSession.stdin.removeListener('error', error)
+			this.ensureInit()
+			this.bareSession!.removeListener('exit', error)
+			this.bareSession!.stdin.removeListener('error', error)
 		})
 	}
 
@@ -474,43 +488,44 @@ class RShellSession {
 			}
 		}
 
-		const killResult = this.bareSession.kill()
+		this.ensureInit()
+		const killResult = this.bareSession!.kill()
 		if(this.collectionTimeout !== undefined) {
 			clearTimeout(this.collectionTimeout)
 		}
-		this.sessionStdOut.close()
-		this.sessionStdErr.close()
-		log.info(`killed R session with pid ${this.bareSession.pid ?? '<unknown>'} and result ${killResult ? 'successful' : 'failed'} (including streams)`)
+		this.sessionStdOut!.close()
+		this.sessionStdErr!.close()
+		log.info(`killed R session with pid ${this.bareSession!.pid ?? '<unknown>'} and result ${killResult ? 'successful' : 'failed'} (including streams)`)
 		return killResult
 	}
 
 	private setupRSessionLoggers(): void {
 		if(this.log.settings.minLevel >= LogLevel.Trace) {
-			this.bareSession.stdout.on('data', (data: Buffer) => {
+			this.bareSession!.stdout.on('data', (data: Buffer) => {
 				this.log.trace(`< ${data.toString()}`)
 			})
-			this.bareSession.on('close', (code: number) => {
+			this.bareSession!.on('close', (code: number) => {
 				this.log.trace(`session exited with code ${code}`)
 			})
 		}
-		this.bareSession.stderr.on('data', (data: string) => {
+		this.bareSession!.stderr.on('data', (data: string) => {
 			this.log.warn(`< ${data}`)
 		})
 	}
 
 	public onExit(callback: (code: number, signal: string | null) => void): void {
-		this.bareSession.on('exit', callback)
-		this.bareSession.stdin.on('error', callback)
+		this.bareSession?.on('exit', callback)
+		this.bareSession?.stdin.on('error', callback)
 	}
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	private on(from: OutputStreamSelector, event: string, listener: (...data: any[]) => void): void {
 		const both = from === 'both'
 		if(both || from === 'stdout') {
-			this.sessionStdOut.on(event, listener)
+			this.sessionStdOut!.on(event, listener)
 		}
 		if(both || from === 'stderr') {
-			this.sessionStdErr.on(event, listener)
+			this.sessionStdErr!.on(event, listener)
 		}
 	}
 
@@ -518,10 +533,10 @@ class RShellSession {
 	private removeListener(from: OutputStreamSelector, event: string, listener: (...data: any[]) => void): void {
 		const both = from === 'both'
 		if(both || from === 'stdout') {
-			this.sessionStdOut.removeListener(event, listener)
+			this.sessionStdOut!.removeListener(event, listener)
 		}
 		if(both || from === 'stderr') {
-			this.sessionStdErr.removeListener(event, listener)
+			this.sessionStdErr!.removeListener(event, listener)
 		}
 	}
 }
