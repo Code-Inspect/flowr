@@ -97,7 +97,7 @@ export interface RShellOptions extends RShellSessionOptions {
 export const DEFAULT_R_SHELL_OPTIONS: RShellOptions = {
 	sessionName:        'default',
 	pathToRExecutable:  getPlatform() === 'windows' ? 'R.exe' : 'R',
-	commandLineOptions: ['--vanilla', '--quiet', '--no-echo', '--no-save'],
+	commandLineOptions: ['--vanilla', '--quiet', '--no-echo', '--no-readline'],
 	cwd:                process.cwd(),
 	env:                process.env,
 	eol:                '\n',
