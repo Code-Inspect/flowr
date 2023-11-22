@@ -9,6 +9,7 @@
     "skipLibCheck": true,
     "sourceMap": true,
     "outDir": "./dist/",
+    "alwaysStrict": true,
     "strict": true
   },
   "lib": [ "esnext", "dom" ],
