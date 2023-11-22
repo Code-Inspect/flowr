@@ -122,6 +122,7 @@ export class RShell {
 	private tokenMapCache:   TokenMap | null = null
 	// should never be more than one, but let's be sure
 	private tempDirs         = new Set<string>()
+	private readonly presentPackagesCache = new Set<string>
 
 	public constructor(options?: Partial<RShellOptions>) {
 		this.options = deepMergeObject(DEFAULT_R_SHELL_OPTIONS, options)
@@ -284,7 +285,11 @@ export class RShell {
 		this.log.debug(`checking if package "${packageName}" is installed`)
 		const result = await this.sendCommandWithOutput(
 			`cat(system.file(package="${packageName}")!="","${this.options.eol}")`)
-		return result.length === 1 && result[0] === 'TRUE'
+		const ret = result.length === 1 && result[0] === 'TRUE'
+		if(ret) {
+			this.presentPackagesCache.add(packageName)
+		}
+		return ret
 	}
 
 	public async allInstalledPackages(): Promise<string[]> {
@@ -306,7 +311,7 @@ export class RShell {
 		/** the temporary directory used for the installation, undefined if none was used */
 		libraryLocation?:      string
 	}> {
-		const packageExistedAlready = await this.isPackageInstalled(packageName)
+		const packageExistedAlready = this.presentPackagesCache.has(packageName) || await this.isPackageInstalled(packageName)
 		if(!force && packageExistedAlready) {
 			this.log.info(`package "${packageName}" is already installed`)
 			if(autoload) {
@@ -332,6 +337,8 @@ export class RShell {
 			this.sendCommand(`library(${ts2r(packageName)},lib.loc=temp)`)
 		}
 
+		this.presentPackagesCache.add(packageName)
+
 		return {
 			packageName,
 			libraryLocation: tempdir,
@@ -344,7 +351,7 @@ export class RShell {
 	 * Additionally, this marks the directory for removal when the shell exits.
 	 */
 	public async obtainTmpDir(): Promise<string> {
-		this.sendCommand('temp <- tempdir()')
+		this.sendCommand('temp<-tempdir()')
 		const [tempdir] = await this.sendCommandWithOutput(`cat(temp, ${ts2r(this.options.eol)})`)
 		this.tempDirs.add(tempdir)
 		return tempdir
