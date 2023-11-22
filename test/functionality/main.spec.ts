@@ -7,13 +7,12 @@
 import { log, LogLevel } from '../../src/util/log'
 import { serverLog } from '../../src/cli/repl/server/server'
 
-
 /**
- * Update the minimum level of all flowr loggers (including the detacthed {@link serverLog}).
+ * Update the minimum level of all flowr loggers (including the detached {@link serverLog}).
  * @param minLevel - The new minimum level to show messages from (inclusive)
  * @param log2File - Whether to log to a file as well
  */
-function setMinLevelOfAllLogs(minLevel: LogLevel, log2File = false) {
+export function setMinLevelOfAllLogs(minLevel: LogLevel, log2File = false) {
 	for(const logger of [log, serverLog]) {
 		if(log2File) {
 			logger.logToFile()
@@ -24,8 +23,16 @@ function setMinLevelOfAllLogs(minLevel: LogLevel, log2File = false) {
 	}
 }
 
+
 export const VERBOSE_TESTS = process.argv.includes('--verbose')
-before(() => setMinLevelOfAllLogs(VERBOSE_TESTS ? LogLevel.Trace : LogLevel.Error, VERBOSE_TESTS))
+
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+export const mochaGlobalSetup = () => {
+	setMinLevelOfAllLogs(VERBOSE_TESTS ? LogLevel.Trace : LogLevel.Error, VERBOSE_TESTS)
+}
+mochaGlobalSetup()
+
 
 /** controlled with the `--test-installation` parameter */
 export const RUN_INSTALLATION_TESTS = process.argv.includes('--test-installation')

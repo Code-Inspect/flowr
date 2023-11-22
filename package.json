@@ -19,6 +19,7 @@
     "license-compat": "license-checker --onlyAllow 'MIT;MIT OR X11;GPLv2;LGPL;GNUGPL;ISC;Apache-2.0;FreeBSD;BSD-2-Clause;clearbsd;ModifiedBSD;BSD-3-Clause;Python-2.0;Unlicense;WTFPL;CC-BY-4.0;CC-BY-3.0;CC0-1.0;0BSD'",
     "doc": "typedoc",
     "test": "nyc --no-clean mocha --require ts-node/register --timeout 60000 \"test/**/*.spec.ts\"",
+    "test-parallel": "npm run test -- --parallel --require 'test/functionality/main.spec.ts'",
     "performance-test": "func() { cd test/performance/ && bash run-all-suites.sh $1 $2; cd ../../; }; func",
     "test-full": "npm run test -- --test-installation"
   },
