@@ -136,14 +136,16 @@ export class RShell {
 			return
 		}
 
-		this.session.onExit((code, signal) => {
-			if(this.options.revive === RShellRevive.Always || (this.options.revive === RShellRevive.OnError && code !== 0)) {
-				this.log.warn(`R session exited with code ${code}, reviving!`)
-				this.options.onRevive(code, signal)
-				this.session = new RShellSession(this.options, this.log)
-				this.revive()
-			}
-		})
+		this.session.onExit((code, signal) => this.shellRevive(code, signal))
+	}
+
+	private shellRevive(code: number, signal: string | null) {
+		if(this.options.revive === RShellRevive.Always || (this.options.revive === RShellRevive.OnError && code !== 0)) {
+			this.log.warn(`R session exited with code ${code}, reviving!`)
+			this.options.onRevive(code, signal)
+			this.session = new RShellSession(this.options, this.log)
+			this.revive()
+		}
 	}
 
 	/**
