@@ -379,6 +379,7 @@ class RShellSession {
 		this.bareSession = spawn(options.pathToRExecutable, options.commandLineOptions, {
 			env:         options.env,
 			cwd:         options.cwd,
+			detached:    false,
 			windowsHide: true
 		})
 		this.sessionStdOut = readline.createInterface({
