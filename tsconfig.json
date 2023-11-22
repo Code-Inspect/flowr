@@ -23,6 +23,7 @@
     "dist/",
     "wiki/",
     "coverage/",
+    "statistics-out/",
     "doc/"
   ]
 }
