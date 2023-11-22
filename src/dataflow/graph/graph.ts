@@ -196,7 +196,7 @@ export class DataflowGraph {
 			return this
 		}
 
-		if(promote) {
+		if(promote && attribute !== 'maybe') {
 			attribute ??= (from as ReferenceForEdge).used === 'maybe' ? 'maybe' : (to as ReferenceForEdge).used
 
 			// reduce the load on attribute checks
