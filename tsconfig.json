@@ -12,8 +12,16 @@
     "strict": true
   },
   "lib": [ "esnext", "dom" ],
+  "include": [
+      "src/**/*"
+  ],
   "exclude": [
-    "node_modules",
-    "node_modules/*"
+    "**/node_modules",
+    "**/.*/",
+    "scripts/",
+    "dist/",
+    "wiki/",
+    "coverage/",
+    "doc/"
   ]
 }
