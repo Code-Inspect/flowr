@@ -1,14 +1,11 @@
 // all examples are based on the R language def (Draft of 2023-03-15, 10.3.1)
+import type { NamespaceIdentifier, RNumberValue, RStringValue } from '../../../src'
 import {
-	type NamespaceIdentifier,
-	RNa, RNull, type RNumberValue, type RStringValue,
-	ArithmeticOperators,
-	Assignments,
-	ComparisonOperators,
-	LogicalOperators,
+	RNa, RNull,
+	Operators,
 	OperatorArity,
-	OperatorDatabase, ModelFormulaOperators
-} from '../../../src/r-bridge'
+	OperatorDatabase
+} from '../../../src'
 
 // maps a string to the expected R number parse value
 export const RNumberPool: { val: RNumberValue, str: string }[] = [
@@ -91,61 +88,30 @@ export const RStringPool: { val: RStringValue, str: string }[] = [
 	{ str: '"\\U{10AFFE}"', val: { str: '\\U{10AFFE}', quotes: '"' } } // unicode 4
 ]
 
-export const RSymbolPool: { val: string, str: string, namespace: NamespaceIdentifier | undefined, symbolStart: number }[] = [
+export const RSymbolPool: { val: string, str: string, namespace: NamespaceIdentifier | undefined, symbolStart: number, internal?: boolean }[] = [
 	{ str: 'NA', val: RNa, namespace: undefined, symbolStart: 1 },
 	{ str: 'NULL', val: RNull, namespace: undefined, symbolStart: 1 },
 	{ str: 'x', val: 'x', namespace: undefined, symbolStart: 1 },
 	{ str: 'x.y', val: 'x.y', namespace: undefined, symbolStart: 1 },
 	{ str: 'x::y', val: 'y', namespace: 'x', symbolStart: 4 },
 	// ::: for non-exported?
-	{ str: 'x:::y', val: 'y', namespace: 'x', symbolStart: 5 }
+	{ str: 'x:::y', val: 'y', namespace: 'x', symbolStart: 5, internal: true }
 ]
 
-const canBeABinaryOp = (op: string): boolean => {
+function canBeABinaryOp(op: string) {
 	const arity = OperatorDatabase[op].arity
 	return arity === OperatorArity.Binary || arity === OperatorArity.Both
 }
 
-const canBeAUnaryOp = (op: string): boolean => {
+function canBeAUnaryOp(op: string): boolean {
 	const arity = OperatorDatabase[op].arity
 	return arity === OperatorArity.Unary || arity === OperatorArity.Both
 }
 
 
-export const RArithmeticBinaryOpPool: { flavor: 'arithmetic', str: string }[] =
-    ArithmeticOperators.filter(canBeABinaryOp).map(op => ({ str: op, flavor: 'arithmetic' }))
+export const BinaryOperatorPool: ReadonlySet<string> = new Set(Operators.filter(canBeABinaryOp))
+export const BinaryNonAssignmentOperators: readonly string[] = [...BinaryOperatorPool].filter(op =>  OperatorDatabase[op].usedAs !== 'assignment')
 
-export const RLogicalBinaryOpPool: { flavor: 'logical', str: string }[] =
-      LogicalOperators.filter(canBeABinaryOp).map(op => ({ str: op, flavor: 'logical' }))
+export const UnaryOperatorPool: ReadonlySet<string> = new Set(Operators.filter(canBeAUnaryOp))
 
-export const RComparisonBinaryOpPool: { flavor: 'comparison', str: string }[] =
-    ComparisonOperators.filter(canBeABinaryOp).map(op => ({ str: op, flavor: 'comparison' }))
-
-export const RModelFormulaBinaryOpPool: { flavor: 'model formula', str: string }[] =
-  ModelFormulaOperators.filter(canBeABinaryOp).map(op => ({ str: op, flavor: 'model formula' }))
-
-export const RAssignmentOpPool: { flavor: 'assignment', str: string }[] =
-    Assignments.filter(canBeABinaryOp).map(op => ({ str: op, flavor: 'assignment' }))
-
-export const RNonAssignmentBinaryOpPool: { label: 'arithmetic' | 'logical' | 'comparison' | 'model formula', pool: typeof RArithmeticBinaryOpPool | typeof RLogicalBinaryOpPool | typeof RComparisonBinaryOpPool | typeof RModelFormulaBinaryOpPool }[] =
-	[
-		{ label: 'arithmetic', pool: RArithmeticBinaryOpPool },
-		{ label: 'logical',    pool: RLogicalBinaryOpPool },
-		{ label: 'comparison', pool: RComparisonBinaryOpPool },
-		{ label: 'model formula', pool: RModelFormulaBinaryOpPool }
-	]
-
-export const RArithmeticUnaryOpPool: { flavor: 'arithmetic', str: string }[] =
-  ArithmeticOperators.filter(canBeAUnaryOp).map(op => ({ str: op, flavor: 'arithmetic' }))
-
-export const RLogicalUnaryOpPool: { flavor: 'logical', str: string }[] =
-  LogicalOperators.filter(canBeAUnaryOp).map(op => ({ str: op, flavor: 'logical' }))
-
-export const RModelFormulaUnaryOpPool: { flavor: 'model formula', str: string }[] =
-  ModelFormulaOperators.filter(canBeAUnaryOp).map(op => ({ str: op, flavor: 'model formula' }))
-
-export const RUnaryOpPool: { label: 'arithmetic' | 'logical' | 'model formula', pool: typeof RArithmeticUnaryOpPool | typeof RLogicalUnaryOpPool | typeof RModelFormulaUnaryOpPool }[] = [
-	{ label: 'arithmetic',    pool: RArithmeticUnaryOpPool   },
-	{ label: 'logical',       pool: RLogicalUnaryOpPool      },
-	{ label: 'model formula', pool: RModelFormulaUnaryOpPool }
-]
+export const AssignmentOperators: readonly string[] = Operators.filter(op => OperatorDatabase[op].usedAs === 'assignment')

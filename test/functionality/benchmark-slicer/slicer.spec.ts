@@ -4,7 +4,7 @@ import {
 	stats2string,
 	summarizeSlicerStats,
 	PerSliceMeasurements
-} from '../../../src/benchmark'
+} from '../../../src'
 import { assert } from 'chai'
 
 async function retrieveStatsSafe(slicer: BenchmarkSlicer, request: { request: string; content: string }) {
@@ -22,7 +22,7 @@ describe('Benchmark Slicer', () => {
 	describe('Stats by parsing text-based inputs', function() {
 		this.timeout('15min')
 		it('Simple slice for simple line', async() => {
-			const slicer = new BenchmarkSlicer()
+			const slicer = new BenchmarkSlicer(0)
 			const request = { request: 'text' as const, content: 'a <- b' }
 			await slicer.init(request)
 			await slicer.slice('1@a')
@@ -66,7 +66,7 @@ describe('Benchmark Slicer', () => {
 
 		})
 		it('Slicing the same code three times', async() => {
-			const slicer = new BenchmarkSlicer()
+			const slicer = new BenchmarkSlicer(0)
 			const request = {
 				request: 'text' as const,
 				content: `library(x)

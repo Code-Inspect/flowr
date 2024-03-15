@@ -1,7 +1,8 @@
 import type { SlicingCriteria } from '../../../../slicing'
-import type { LAST_PER_FILE_STEP, LAST_STEP, StepResults } from '../../../../core'
 import type { IdMessageBase, MessageDefinition } from './messages'
 import * as Joi from 'joi'
+import type { StepResults } from '../../../../core/steps/output'
+import type { LAST_PER_FILE_STEP, LAST_STEP } from '../../../../core/steps/steps'
 
 /**
  * Can only be sent after you have sent the {@link FileAnalysisRequestMessage}.
@@ -28,7 +29,7 @@ export const requestSliceMessage: MessageDefinition<SliceRequestMessage> = {
 
 
 /**
- * Similar to {@link FileAnalysisResponseMessage} this only contains the results of
+ * Similar to {@link FileAnalysisResponseMessageJson} this only contains the results of
  * the slice steps.
  */
 export interface SliceResponseMessage extends IdMessageBase {

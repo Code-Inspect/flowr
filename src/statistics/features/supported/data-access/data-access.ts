@@ -1,7 +1,7 @@
 import type { Feature, FeatureProcessorInput } from '../../feature'
 import type { Writable } from 'ts-essentials'
-import type { NodeId, RNodeWithParent } from '../../../../r-bridge'
-import { RType, visitAst, RoleInParent, rolesOfParents } from '../../../../r-bridge'
+import type { NodeId, ParentInformation, RFunctionArgument, RNodeWithParent } from '../../../../r-bridge'
+import { EmptyArgument, RType, visitAst, RoleInParent, rolesOfParents } from '../../../../r-bridge'
 import { assertUnreachable, guard } from '../../../../util/assert'
 import { appendStatisticsFile } from '../../../output'
 import type {
@@ -33,7 +33,7 @@ const initialDataAccessInfo = {
 
 export type DataAccessInfo = Writable<typeof initialDataAccessInfo>
 
-function classifyArguments(args: (RNodeWithParent | null)[], existing: Record<number, bigint | CommonSyntaxTypeCounts>) {
+function classifyArguments(args: readonly RFunctionArgument<ParentInformation>[], existing: Record<number, bigint | CommonSyntaxTypeCounts>) {
 	if(args.length === 0) {
 		(existing[0] as unknown as number)++
 		return
@@ -41,7 +41,7 @@ function classifyArguments(args: (RNodeWithParent | null)[], existing: Record<nu
 
 	let i = 1
 	for(const arg of args) {
-		if(arg === null) {
+		if(arg === EmptyArgument) {
 			(existing[0] as unknown as number)++
 			continue
 		}

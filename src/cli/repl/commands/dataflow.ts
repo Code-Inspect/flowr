@@ -1,11 +1,11 @@
 import type { ReplCommand } from './main'
-import { SteppingSlicer } from '../../../core'
 import type { RShell } from '../../../r-bridge'
 import { requestFromInput } from '../../../r-bridge'
 import {
 	graphToMermaid,
 	graphToMermaidUrl
-} from '../../../util/mermaid/dfg'
+} from '../../../util/mermaid'
+import { SteppingSlicer } from '../../../core/stepping-slicer'
 
 async function dataflow(shell: RShell, remainingLine: string) {
 	return await new SteppingSlicer({
@@ -23,7 +23,7 @@ export const dataflowCommand: ReplCommand = {
 	fn:           async(output, shell, remainingLine) => {
 		const result = await dataflow(shell, remainingLine)
 
-		output.stdout(graphToMermaid(result.dataflow.graph, result.normalize.idMap, undefined, undefined, false))
+		output.stdout(graphToMermaid({ graph: result.dataflow.graph, dataflowIdMap: result.normalize.idMap, includeEnvironments: false }).string)
 	}
 }
 

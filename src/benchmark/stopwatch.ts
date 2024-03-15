@@ -43,7 +43,7 @@ export class Measurements<T> {
    */
 	public start(key: T): IStoppableStopwatch {
 		// we guard *before* starting so there is no additional time penalty
-		guard(!this.measurements.has(key), `already started stop watch for ${JSON.stringify(key)}`)
+		guard(!this.measurements.has(key), () => `already started stop watch for ${JSON.stringify(key)}`)
 		const stopwatch = new Stopwatch()
 		this.measurements.set(key, stopwatch)
 		stopwatch.start()
@@ -51,7 +51,7 @@ export class Measurements<T> {
 	}
 
 	/**
-   * Automatically call {@link Measurements#start | start} and the corresponding stop to measure the execution time of the given function.
+   * Automatically call {@link Measurements#start|start} and the corresponding stop to measure the execution time of the given function.
    * @see {@link measureAsync}
    */
 	public measure<Out>(key: T, fn: () => Out): Out {

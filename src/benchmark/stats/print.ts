@@ -38,7 +38,7 @@ function formatNanoseconds(nanoseconds: bigint | number): string {
 
 function print<K>(measurements: Map<K, ElapsedTime>, key: K) {
 	const time = measurements.get(key)
-	guard(time !== undefined, `Measurement for ${JSON.stringify(key)} not found`)
+	guard(time !== undefined, () => `Measurement for ${JSON.stringify(key)} not found`)
 	return formatNanoseconds(time)
 }
 
@@ -74,7 +74,7 @@ function formatSummarizedMeasure(measure: SummarizedMeasurement | undefined, fmt
 
 function printSummarizedMeasurements(stats: SummarizedPerSliceStats, key: PerSliceMeasurements): string {
 	const measure = stats.measurements.get(key)
-	guard(measure !== undefined, `Measurement for ${JSON.stringify(key)} not found`)
+	guard(measure !== undefined, () => `Measurement for ${JSON.stringify(key)} not found`)
 	return formatSummarizedTimeMeasure(measure)
 }
 
@@ -85,7 +85,7 @@ function printCountSummarizedMeasurements(stats: SummarizedMeasurement): string 
 
 /**
  * Converts the given stats to a human-readable string.
- * You may have to {@link summarizeSlicerStats | summarize} the stats first.
+ * You may have to {@link summarizeSlicerStats|summarize} the stats first.
  */
 export function stats2string(stats: SummarizedSlicerStats): string {
 	let result = `

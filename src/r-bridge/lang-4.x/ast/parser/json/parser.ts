@@ -1,48 +1,41 @@
-import type { DeepPartial } from 'ts-essentials'
-import type { XmlBasedJson, XmlParserHooks , ParserData } from '../xml'
-import { nameKey , DEFAULT_PARSER_HOOKS , attributesKey, contentKey , childrenKey } from '../xml'
-import { decorateAst, deterministicCountingIdGenerator } from '../../model'
-import type { IdGenerator, NoInfo , NormalizedAst } from '../../model'
-import { deepMergeObject } from '../../../../../util/objects'
+import { childrenKey, nameKey, attributesKey, contentKey } from '../xml'
+import type { IdGenerator, NoInfo, NormalizedAst } from '../../model'
+import { decorateAst, deterministicCountingIdGenerator, RawRType } from '../../model'
 import type { Entry } from './format'
-import { RootId, prepareParsedData } from './format'
-import { parseRootObjToAst } from '../xml/internal'
+import { prepareParsedData } from './format'
 import { log } from '../../../../../util/log'
+import type { NormalizerData, XmlBasedJson } from '../xml'
+import { normalizeRootObjToAst } from '../xml/internal'
 
 export const parseLog = log.getSubLogger({ name: 'ast-parser' })
 
-export function normalize(jsonString: string, hooks?: DeepPartial<XmlParserHooks>, getId: IdGenerator<NoInfo> = deterministicCountingIdGenerator(0)): NormalizedAst {
-	const hooksWithDefaults = deepMergeObject(DEFAULT_PARSER_HOOKS, hooks) as XmlParserHooks
-
-	const data: ParserData = { hooks: hooksWithDefaults, currentRange: undefined, currentLexeme: undefined }
+export function normalize(jsonString: string, getId: IdGenerator<NoInfo> = deterministicCountingIdGenerator(0)): NormalizedAst {
+	const data: NormalizerData = { currentRange: undefined, currentLexeme: undefined }
 	const object = convertPreparedParsedData(prepareParsedData(jsonString))
 
-	return decorateAst(parseRootObjToAst(data, object), getId)
+	return decorateAst(normalizeRootObjToAst(data, object), getId)
 }
 
-export function convertPreparedParsedData(valueMapping: Map<number, Entry>): XmlBasedJson {
-	const exprlist: XmlBasedJson =  {}
-	exprlist[nameKey] = 'exprlist'
-	const children = []
-	for(const entry of valueMapping.values()) {
-		if(entry.parent == RootId) {
-			children.push(convertEntry(entry))
+export function convertPreparedParsedData(rootEntries: Entry[]): XmlBasedJson {
+	return {
+		[RawRType.ExpressionList]: {
+			[nameKey]:     RawRType.ExpressionList,
+			[childrenKey]: rootEntries.map(convertEntry)
 		}
 	}
-	exprlist[childrenKey] = children
-	return { 'exprlist': exprlist }
 }
 
 function convertEntry(csvEntry: Entry): XmlBasedJson {
-	const xmlEntry: XmlBasedJson = {}
-
-	xmlEntry[attributesKey] = {
-		'line1': csvEntry.line1,
-		'col1':  csvEntry.col1,
-		'line2': csvEntry.line2,
-		'col2':  csvEntry.col2
+	const xmlEntry: XmlBasedJson = {
+		[nameKey]:       csvEntry.token,
+		[attributesKey]: {
+			'line1': csvEntry.line1,
+			'col1':  csvEntry.col1,
+			'line2': csvEntry.line2,
+			'col2':  csvEntry.col2
+		}
 	}
-	xmlEntry[nameKey] = csvEntry.token
+
 	if(csvEntry.text) {
 		xmlEntry[contentKey] = csvEntry.text
 	}

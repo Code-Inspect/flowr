@@ -5,12 +5,8 @@
  */
 export interface DataflowGraphEdge {
 	// currently multiple edges are represented by multiple types
-	types:     Set<EdgeType>
-	attribute: DataflowGraphEdgeAttribute
+	types: Set<EdgeType>
 }
-
-// context -- is it always read/defined-by
-export type DataflowGraphEdgeAttribute = 'always' | 'maybe'
 
 
 /**
@@ -40,3 +36,15 @@ export enum EdgeType {
 	/** The source and edge relate to each other bidirectionally */
 	Relates = 'relates'
 }
+
+const validEdges: ReadonlySet<EdgeType> = new Set([EdgeType.Reads, EdgeType.DefinedBy, EdgeType.Argument, EdgeType.Calls, EdgeType.Relates, EdgeType.DefinesOnCall])
+
+export function shouldTraverseEdge(types: ReadonlySet<EdgeType>): boolean {
+	for(const type of types) {
+		if(validEdges.has(type)) {
+			return true
+		}
+	}
+	return false
+}
+

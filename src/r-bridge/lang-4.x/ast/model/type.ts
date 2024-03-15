@@ -201,18 +201,24 @@ export const enum RType {
 	Delimiter = 'RDelimiter',
 }
 
+
+const validSymbolTypes = new Set([
+	RawRType.Symbol,
+	RawRType.SymbolPackage,
+	RawRType.SymbolFunctionCall,
+	RawRType.NullConst,
+	RawRType.StringConst,
+	RawRType.ParenLeft,
+	RawRType.ParenRight,
+	RawRType.BraceLeft,
+	RawRType.BraceRight,
+	RawRType.Slot,
+])
 /**
  * Validates, whether the given type can be used as a symbol in R
  *
  * @see RawRType
  */
 export function isSymbol(type: string): boolean {
-	return (
-		type === RawRType.Symbol ||
-    type === RawRType.SymbolPackage ||
-    type === RawRType.SymbolFunctionCall ||
-    type === RawRType.NullConst ||
-		type === RawRType.StringConst ||
-    type === RawRType.Slot
-	)
+	return validSymbolTypes.has(type as RawRType)
 }

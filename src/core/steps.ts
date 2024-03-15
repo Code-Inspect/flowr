@@ -14,10 +14,7 @@
  */
 
 import type { MergeableRecord } from '../util/objects'
-import { retrieveParseDataFromRCode } from '../r-bridge'
-import { produceDataFlowGraph } from '../dataflow'
-import { reconstructToCode, staticSlicing } from '../slicing'
-import type { IStepPrinter } from './print/print'
+import type { IPipelineStepPrinter } from './print/print'
 import { internalPrinter, StepOutputFormat } from './print/print'
 import {
 	normalizedAstToJson,
@@ -33,13 +30,13 @@ import {
 	dataflowGraphToMermaidUrl,
 	dataflowGraphToQuads
 } from './print/dataflow-printer'
-import { normalize } from '../r-bridge/lang-4.x/ast/parser/json/parser'
+import type { StepProcessingFunction } from './steps/step'
+import { PARSE_WITH_R_SHELL_STEP } from './steps/all/core/00-parse'
+import { NORMALIZE } from './steps/all/core/10-normalize'
+import { STATIC_DATAFLOW } from './steps/all/core/20-dataflow'
+import { STATIC_SLICE } from './steps/all/static-slicing/00-slice'
+import { NAIVE_RECONSTRUCT } from './steps/all/static-slicing/10-reconstruct'
 
-/**
- * This represents close a function that we know completely nothing about.
- * Nevertheless, this is the basis of what a step processor should look like.
- */
-export type StepFunction = (...args: never[]) => unknown
 /**
  * This represents the required execution frequency of a step.
  */
@@ -50,7 +47,7 @@ export type StepRequired = 'once-per-file' | 'once-per-slice'
  * Defines what is to be known of a single step in the slicing process.
  */
 export interface IStep<
-	Fn extends StepFunction,
+	Fn extends StepProcessingFunction,
 > extends MergeableRecord {
 	/** Human-readable description of this step */
 	description: string
@@ -59,10 +56,10 @@ export interface IStep<
 	/* does this step has to be repeated for each new slice or can it be performed only once in the initialization */
 	required:    StepRequired
 	printer: {
-		[K in StepOutputFormat]?: IStepPrinter<Fn, K, never[]>
+		[K in StepOutputFormat]?: IPipelineStepPrinter<Fn, K, never[]>
 	} & {
 		// we always want to have the internal printer
-		[StepOutputFormat.Internal]: IStepPrinter<Fn, StepOutputFormat.Internal, []>
+		[StepOutputFormat.Internal]: IPipelineStepPrinter<Fn, StepOutputFormat.Internal, []>
 	}
 }
 
@@ -70,17 +67,17 @@ export interface IStep<
 export const STEPS_PER_FILE = {
 	'parse': {
 		description: 'Parse the given R code into an AST',
-		processor:   retrieveParseDataFromRCode,
+		processor:   PARSE_WITH_R_SHELL_STEP.processor,
 		required:    'once-per-file',
 		printer:     {
 			[StepOutputFormat.Internal]: internalPrinter,
 			[StepOutputFormat.Json]:     text => text,
 			[StepOutputFormat.RdfQuads]: parseToQuads
 		}
-	} satisfies IStep<typeof retrieveParseDataFromRCode>,
+	} satisfies IStep<typeof PARSE_WITH_R_SHELL_STEP.processor>,
 	'normalize': {
 		description: 'Normalize the AST to flowR\'s AST (first step of the normalization)',
-		processor:   normalize,
+		processor:   NORMALIZE.processor,
 		required:    'once-per-file',
 		printer:     {
 			[StepOutputFormat.Internal]:   internalPrinter,
@@ -89,10 +86,10 @@ export const STEPS_PER_FILE = {
 			[StepOutputFormat.Mermaid]:    printNormalizedAstToMermaid,
 			[StepOutputFormat.MermaidUrl]: printNormalizedAstToMermaidUrl
 		}
-	} satisfies IStep<typeof normalize>,
+	} satisfies IStep<typeof NORMALIZE.processor>,
 	'dataflow': {
 		description: 'Construct the dataflow graph',
-		processor:   (r, a) => produceDataFlowGraph(r, a),
+		processor:   STATIC_DATAFLOW.processor,
 		required:    'once-per-file',
 		printer:     {
 			[StepOutputFormat.Internal]:   internalPrinter,
@@ -101,26 +98,26 @@ export const STEPS_PER_FILE = {
 			[StepOutputFormat.Mermaid]:    dataflowGraphToMermaid,
 			[StepOutputFormat.MermaidUrl]: dataflowGraphToMermaidUrl
 		}
-	} satisfies IStep<typeof produceDataFlowGraph>
+	} satisfies IStep<typeof STATIC_DATAFLOW.processor>
 } as const
 
 export const STEPS_PER_SLICE = {
 	'slice': {
 		description: 'Calculate the actual static slice from the dataflow graph and the given slicing criteria',
-		processor:   staticSlicing,
+		processor:   STATIC_SLICE.processor,
 		required:    'once-per-slice',
 		printer:     {
 			[StepOutputFormat.Internal]: internalPrinter
 		}
-	} satisfies IStep<typeof staticSlicing>,
+	} satisfies IStep<typeof STATIC_SLICE.processor>,
 	'reconstruct': {
 		description: 'Reconstruct R code from the static slice',
-		processor:   reconstructToCode,
+		processor:   NAIVE_RECONSTRUCT.processor,
 		required:    'once-per-slice',
 		printer:     {
 			[StepOutputFormat.Internal]: internalPrinter
 		}
-	} satisfies IStep<typeof reconstructToCode>
+	} satisfies IStep<typeof NAIVE_RECONSTRUCT.processor>
 } as const
 
 export const STEPS = { ...STEPS_PER_FILE, ...STEPS_PER_SLICE } as const
@@ -151,7 +148,7 @@ export function printStepResult<
 	AdditionalInput extends Tail<Parameters<Printer>>,
 >(step: Name, data: Awaited<ReturnType<Processor>>, format: Format, ...additional: AdditionalInput): Promise<string> {
 	const base = STEPS[step].printer
-	const printer = base[format as keyof typeof base] as IStepPrinter<StepProcessor<Name>, Format, AdditionalInput> | undefined
+	const printer = base[format as keyof typeof base] as IPipelineStepPrinter<StepProcessor<Name>, Format, AdditionalInput> | undefined
 	guard(printer !== undefined, `printer for ${step} does not support ${String(format)}`)
 	return printer(data, ...additional) as Promise<string>
 }

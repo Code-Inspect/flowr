@@ -19,11 +19,5 @@ describe('RShellExecutor', function() {
 		const error = executor.run('a', true)
 		assert.match(error, /Error.*'a'/g)
 		assert.match(error, /halted/g)
-
-		// check continuing on error
-		executor.continueOnError()
-		const ignored = executor.run('a', true)
-		assert.match(ignored, /Error.*'a'/g)
-		assert.notMatch(ignored, /halted/g)
 	})
 })

@@ -5,6 +5,7 @@ import { isSpecialSymbol, RType, visitAst } from '../../../../r-bridge'
 import { appendStatisticsFile } from '../../../output'
 import { EdgeType } from '../../../../dataflow'
 import { postProcess } from './post-process'
+import { getRangeStart } from '../../../../util/range'
 
 
 const initialVariableInfo = {
@@ -41,7 +42,7 @@ function visitVariables(info: VariableInfo, input: FeatureProcessorInput): void 
 				info.unknownVariables++
 				appendStatisticsFile(variables.name, 'unknown', [[
 					node.info.fullLexeme ?? node.lexeme,
-					[node.location.start.line, node.location.start.column]
+					getRangeStart(node.location)
 				] satisfies DefinedVariableInformation ], input.filepath)
 				return
 			}
@@ -52,7 +53,7 @@ function visitVariables(info: VariableInfo, input: FeatureProcessorInput): void 
 				const lexeme = node.info.fullLexeme ?? node.lexeme
 				appendStatisticsFile(variables.name, 'definedVariables', [[
 					lexeme,
-					[node.location.start.line, node.location.start.column]
+					getRangeStart(node.location)
 				] satisfies DefinedVariableInformation ], input.filepath)
 				// check for redefinitions
 				const hasRedefinitions = [...edges.entries()].some(([target, edge]) => !redefinedBlocker.has(target) && edge.types.has(EdgeType.SameDefDef))
@@ -61,14 +62,14 @@ function visitVariables(info: VariableInfo, input: FeatureProcessorInput): void 
 					redefinedBlocker.add(node.info.id)
 					appendStatisticsFile(variables.name, 'redefinedVariables', [[
 						lexeme,
-						[node.location.start.line, node.location.start.column]
+						getRangeStart(node.location)
 					] satisfies DefinedVariableInformation ], input.filepath)
 				}
 			} else if(dfNode.tag === 'use') {
 				info.numberOfVariableUses++
 				appendStatisticsFile(variables.name, 'usedVariables', [[
 					node.info.fullLexeme ?? node.lexeme,
-					[node.location.start.line, node.location.start.column]
+					getRangeStart(node.location)
 				] satisfies DefinedVariableInformation ], input.filepath)
 			}
 		}

@@ -14,6 +14,9 @@ import { guard } from '../../../../../util/assert'
 import type { SourceRange } from '../../../../../util/range'
 import { BiMap } from '../../../../../util/bimap'
 import { foldAst } from './fold'
+import {
+	EmptyArgument
+} from '../nodes'
 import type {
 	RArgument,
 	RBinaryOp,
@@ -21,11 +24,13 @@ import type {
 	RNamedFunctionCall,
 	RParameter,
 	RPipe,
-	RUnnamedFunctionCall
+	RUnnamedFunctionCall,
+	RExpressionList
 } from '../nodes'
 import type { MergeableRecord } from '../../../../../util/objects'
 import { RoleInParent } from './role'
 import { RType } from '../type'
+import type { RDelimiter } from '../nodes/info'
 
 /** The type of the id assigned to each node. Branded to avoid problematic usages with other string types. */
 export type NodeId = string & { __brand?: 'node-id'};
@@ -51,8 +56,8 @@ export function sourcedDeterministicCountingIdGenerator(path: string, location: 
 	return () => `${path}-${loc2Id(location)}-${id++}`
 }
 
-function loc2Id(loc: SourceRange) {
-	return `${loc.start.line}:${loc.start.column}-${loc.end.line}:${loc.end.column}`
+function loc2Id([sl,sc,el,ec]: SourceRange): string {
+	return `${sl}:${sc}-${el}:${ec}`
 }
 
 /**
@@ -60,7 +65,7 @@ function loc2Id(loc: SourceRange) {
  *
  * @param data - the node to generate an id for, must have location information
  */
-export function nodeToLocationId<OtherInfo>(data: RNode<OtherInfo>): NodeId {
+export function nodeToLocationId<OtherInfo>(data: RNode<OtherInfo> | RDelimiter): NodeId {
 	const loc = data.location
 	guard(loc !== undefined, 'location must be defined to generate a location id')
 	return loc2Id(loc)
@@ -107,11 +112,11 @@ interface FoldInfo<OtherInfo> { idMap: DecoratedAstMap<OtherInfo>, getId: IdGene
  * Contains the normalized AST as a doubly linked tree
  * and a map from ids to nodes so that parent links can be chased easily.
  */
-export interface NormalizedAst<OtherInfo = ParentInformation> {
+export interface NormalizedAst<OtherInfo = ParentInformation, Node = RNode<OtherInfo & ParentInformation>> {
 	/** Bidirectional mapping of ids to the corresponding nodes and the other way */
 	idMap: DecoratedAstMap<OtherInfo>
 	/** The root of the AST with parent information */
-	ast:   RNodeWithParent<OtherInfo>
+	ast:   Node
 }
 
 /**
@@ -122,7 +127,7 @@ export interface NormalizedAst<OtherInfo = ParentInformation> {
  *
  * @typeParam OtherInfo - The original decoration of the ast nodes (probably is nothing as the id decoration is most likely the first step to be performed after extraction)
  *
- * @returns A {@link DecoratedAst | decorated AST} based on the input and the id provider.
+ * @returns A {@link DecoratedAst|decorated AST} based on the input and the id provider.
  */
 export function decorateAst<OtherInfo = NoInfo>(ast: RNode<OtherInfo>, getId: IdGenerator<OtherInfo> = deterministicCountingIdGenerator(0)): NormalizedAst<OtherInfo & ParentInformation> {
 	const idMap: DecoratedAstMap<OtherInfo> = new BiMap<NodeId, RNodeWithParent<OtherInfo>>()
@@ -134,25 +139,15 @@ export function decorateAst<OtherInfo = NoInfo>(ast: RNode<OtherInfo>, getId: Id
 	const unaryOp = createFoldForUnaryOp(info)
 
 	const decoratedAst: RNodeWithParent<OtherInfo> = foldAst(ast, {
-		foldNumber:  foldLeaf,
-		foldString:  foldLeaf,
-		foldLogical: foldLeaf,
-		foldSymbol:  foldLeaf,
-		foldAccess:  createFoldForAccess(info),
-		binaryOp:    {
-			foldLogicalOp:    foldBinaryOp,
-			foldArithmeticOp: foldBinaryOp,
-			foldComparisonOp: foldBinaryOp,
-			foldAssignment:   foldBinaryOp,
-			foldPipe:         foldBinaryOp,
-			foldModelFormula: foldBinaryOp
-		},
-		unaryOp: {
-			foldArithmeticOp: unaryOp,
-			foldLogicalOp:    unaryOp,
-			foldModelFormula: unaryOp
-		},
-		other: {
+		foldNumber:   foldLeaf,
+		foldString:   foldLeaf,
+		foldLogical:  foldLeaf,
+		foldSymbol:   foldLeaf,
+		foldAccess:   createFoldForAccess(info),
+		foldBinaryOp: foldBinaryOp,
+		foldPipe:     foldBinaryOp,
+		foldUnaryOp:  unaryOp,
+		other:        {
 			foldComment:       foldLeaf,
 			foldLineDirective: foldLeaf
 		},
@@ -225,7 +220,7 @@ function createFoldForUnaryOp<OtherInfo>(info: FoldInfo<OtherInfo>) {
 }
 
 function createFoldForAccess<OtherInfo>(info: FoldInfo<OtherInfo>) {
-	return (data: RNode<OtherInfo>, accessed: RNodeWithParent<OtherInfo>, access: string | (RNodeWithParent<OtherInfo> | null)[]): RNodeWithParent<OtherInfo> => {
+	return (data: RNode<OtherInfo>, accessed: RNodeWithParent<OtherInfo>, access: readonly (RNodeWithParent<OtherInfo> | typeof EmptyArgument)[]): RNodeWithParent<OtherInfo> => {
 		const id = info.getId(data)
 		const decorated = { ...data, info: { ...data.info, id, parent: undefined }, accessed, access } as RNodeWithParent<OtherInfo>
 		info.idMap.set(id, decorated)
@@ -236,7 +231,7 @@ function createFoldForAccess<OtherInfo>(info: FoldInfo<OtherInfo>) {
 			let idx = 0 // the first oe will be skipped in the first iter
 			for(const acc of access) {
 				idx++
-				if(acc !== null) {
+				if(acc !== EmptyArgument) {
 					const curInfo = acc.info
 					curInfo.parent = id
 					curInfo.index = idx
@@ -299,7 +294,7 @@ function createFoldForWhileLoop<OtherInfo>(info: FoldInfo<OtherInfo>) {
 function createFoldForIfThenElse<OtherInfo>(info: FoldInfo<OtherInfo>) {
 	return (data: RNode<OtherInfo>, condition: RNodeWithParent<OtherInfo>, then: RNodeWithParent<OtherInfo>, otherwise?: RNodeWithParent<OtherInfo>): RNodeWithParent<OtherInfo> => {
 		const id = info.getId(data)
-		const decorated = { ...data, info: { ...data.info, id, parent: undefined },  condition, then, otherwise } as RNodeWithParent<OtherInfo>
+		const decorated = { ...data, info: { ...data.info, id, parent: undefined }, condition, then, otherwise } as RNodeWithParent<OtherInfo>
 		info.idMap.set(id, decorated)
 		const condInfo = condition.info
 		condInfo.parent = id
@@ -319,9 +314,9 @@ function createFoldForIfThenElse<OtherInfo>(info: FoldInfo<OtherInfo>) {
 }
 
 function createFoldForExprList<OtherInfo>(info: FoldInfo<OtherInfo>) {
-	return (data: RNode<OtherInfo>, children: RNodeWithParent<OtherInfo>[]): RNodeWithParent<OtherInfo> => {
+	return (data: RExpressionList<OtherInfo>, grouping: [RNodeWithParent<OtherInfo>, RNodeWithParent<OtherInfo>] | undefined, children: readonly RNodeWithParent<OtherInfo>[]): RNodeWithParent<OtherInfo> => {
 		const id = info.getId(data)
-		const decorated = { ...data, info: { ...data.info, id, parent: undefined }, children } as RNodeWithParent<OtherInfo>
+		const decorated = { ...data, info: { ...data.info, id, parent: undefined }, grouping, children } as RNodeWithParent<OtherInfo>
 		info.idMap.set(id, decorated)
 		let i = 0
 		for(const child of children) {
@@ -335,7 +330,7 @@ function createFoldForExprList<OtherInfo>(info: FoldInfo<OtherInfo>) {
 }
 
 function createFoldForFunctionCall<OtherInfo>(info: FoldInfo<OtherInfo>) {
-	return (data: RFunctionCall<OtherInfo>, functionName: RNodeWithParent<OtherInfo>, args: (RNodeWithParent<OtherInfo> | undefined)[]): RNodeWithParent<OtherInfo> => {
+	return (data: RFunctionCall<OtherInfo>, functionName: RNodeWithParent<OtherInfo>, args: readonly (RNodeWithParent<OtherInfo> | typeof EmptyArgument)[]): RNodeWithParent<OtherInfo> => {
 		const id = info.getId(data)
 		let decorated: RFunctionCall<OtherInfo & ParentInformation>
 		if(data.flavor === 'named') {
@@ -350,7 +345,7 @@ function createFoldForFunctionCall<OtherInfo>(info: FoldInfo<OtherInfo>) {
 		let idx = 0
 		for(const arg of args) {
 			idx++
-			if(arg !== undefined) {
+			if(arg !== EmptyArgument) {
 				const argInfo = arg.info
 				argInfo.parent = id
 				argInfo.index = idx

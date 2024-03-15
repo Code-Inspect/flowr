@@ -126,7 +126,7 @@ We explain the most important workflows in the following:
   - running the [linter](#linting) and reporting its results
   - deploying the documentation to [GitHub Pages](https://code-inspect.github.io/flowr/doc/)
 - [release.yaml](../.github/workflows/release.yaml) is responsible for creating a new release, only to be run by repository owners. Furthermore, it adds the new docker image to [docker hub](https://hub.docker.com/r/eagleoutice/flowr).
-- [check-broken-links.yaml](../.github/workflows/check-broken-links.yaml) repeatedly tests that all links are not dead!
+- [broken-links-and-wiki.yaml](../.github/workflows/broken-links-and-wiki.yaml) repeatedly tests that all links are not dead!
 
 ## Linting
 

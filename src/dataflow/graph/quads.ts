@@ -19,8 +19,7 @@ export function df2quads(graph: DataflowGraph, config: QuadSerializationConfigur
 			[...targets].map(([toId, info]) => ({
 				from: fromId,
 				to:   toId,
-				type: [...info.types],
-				when: info.attribute
+				type: [...info.types]
 			}))
 		)
 	},

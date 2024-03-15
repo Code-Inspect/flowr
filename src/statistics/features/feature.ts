@@ -19,7 +19,7 @@ import {
 import type { EvalOptions } from 'xpath-ts2/src/parse-api'
 import type { MergeableRecord } from '../../util/objects'
 import type { NormalizedAst } from '../../r-bridge'
-import type { DataflowInformation } from '../../dataflow/internal/info'
+import type { DataflowInformation } from '../../dataflow/info'
 import { variables } from './supported/variables/variables'
 import type { MetaStatistics } from '../meta-statistics'
 import type { StatisticsSummarizerConfiguration } from '../../util/summarizer/statistics/summarizer'

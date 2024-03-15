@@ -18,13 +18,18 @@ export interface Entry extends Record<string, unknown> {
 
 type ParsedDataRow = [line1: number, col1: number, line2: number, col2: number, id: number, parent: number, token: string, terminal: boolean, text: string]
 
-export function prepareParsedData(data: string): Map<number, Entry> {
-	const json: unknown = JSON.parse(data)
+/**
+ * Parses the given data and sets child relationship, return the list of root entries (with a parent of {@link RootId}).
+ */
+export function prepareParsedData(data: string): Entry[] {
+	const json: unknown = JSON.parse(`[${data}]`)
 	guard(Array.isArray(json), () => `Expected ${data} to be an array but was not`)
 
 	const ret = new Map<number, Entry>((json as ParsedDataRow[]).map(([line1, col1, line2, col2, id, parent, token, terminal, text]) => {
 		return [id, { line1, col1, line2, col2, id, parent, token: removeTokenMapQuotationMarks(token), terminal, text }] satisfies [number, Entry]
 	}))
+
+	const roots: Entry[] = []
 
 	// iterate a second time to set parent-child relations (since they may be out of order in the csv)
 	for(const entry of ret.values()) {
@@ -34,8 +39,10 @@ export function prepareParsedData(data: string): Map<number, Entry> {
 				parent.children ??= []
 				parent.children.push(entry)
 			}
+		} else {
+			roots.push(entry)
 		}
 	}
 
-	return ret
+	return roots
 }

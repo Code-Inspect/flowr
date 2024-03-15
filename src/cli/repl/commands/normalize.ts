@@ -1,14 +1,18 @@
 import type { ReplCommand } from './main'
-import { SteppingSlicer } from '../../../core'
 import type { RShell } from '../../../r-bridge'
 import { requestFromInput } from '../../../r-bridge'
 import { normalizedAstToMermaid, normalizedAstToMermaidUrl } from '../../../util/mermaid'
+import { PipelineExecutor } from '../../../core/pipeline-executor'
+import { PARSE_WITH_R_SHELL_STEP } from '../../../core/steps/all/core/00-parse'
+import { NORMALIZE } from '../../../core/steps/all/core/10-normalize'
+import { createPipeline } from '../../../core/steps/pipeline'
 
-async function normalize(shell: RShell, remainingLine: string) {
-	return await new SteppingSlicer({
-		stepOfInterest: 'normalize',
+const normalizePipeline = createPipeline(PARSE_WITH_R_SHELL_STEP, NORMALIZE)
+
+async function normalize(shell: RShell, remainingLine: string, pipeline: typeof normalizePipeline = normalizePipeline) {
+	return await new PipelineExecutor(pipeline, {
 		shell,
-		request:        requestFromInput(remainingLine.trim())
+		request: requestFromInput(remainingLine.trim())
 	}).allRemainingSteps()
 }
 
@@ -18,9 +22,8 @@ export const normalizeCommand: ReplCommand = {
 	aliases:      [ 'n' ],
 	script:       false,
 	fn:           async(output, shell, remainingLine) => {
-		const result = await normalize(shell, remainingLine)
-
-		output.stdout(normalizedAstToMermaid(result.normalize.ast))
+		const { normalize: { ast } } = await normalize(shell, remainingLine)
+		output.stdout(normalizedAstToMermaid(ast))
 	}
 }
 
@@ -30,8 +33,9 @@ export const normalizeStarCommand: ReplCommand = {
 	aliases:      [ 'n*' ],
 	script:       false,
 	fn:           async(output, shell, remainingLine) => {
-		const result = await normalize(shell, remainingLine)
-
-		output.stdout(normalizedAstToMermaidUrl(result.normalize.ast))
+		const { normalize: { ast } }  = await normalize(shell, remainingLine)
+		output.stdout(normalizedAstToMermaidUrl(ast))
 	}
 }
+
+

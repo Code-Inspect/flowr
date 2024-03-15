@@ -14,3 +14,4 @@ changed() {
 
 
 echo "$changedFiles" | (grep --quiet "package.json" && changed)
+exit 0

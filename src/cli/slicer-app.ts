@@ -1,4 +1,4 @@
-import { log } from '../util/log'
+import { log, LogLevel } from '../util/log'
 import fs from 'fs'
 import { guard } from '../util/assert'
 import type { ReconstructionResult, SingleSlicingCriterion, SliceResult, SlicingCriteria } from '../slicing'
@@ -66,8 +66,10 @@ async function getSlice() {
 	}
 
 	const { stats, normalize, parse, tokenMap, dataflow } = slicer.finish()
-	const mappedCriteria = mappedSlices.map(c => `    ${c.criterion} => ${c.id} (${JSON.stringify(normalize.idMap.get(c.id)?.location)})`).join('\n')
-	log.info(`Mapped criteria:\n${mappedCriteria}`)
+	if(log.settings.minLevel <= LogLevel.Info) {
+		const mappedCriteria = mappedSlices.map(c => `    ${c.criterion} => ${c.id} (${JSON.stringify(normalize.idMap.get(c.id)?.location)})`).join('\n')
+		log.info(`Mapped criteria:\n${mappedCriteria}`)
+	}
 	const sliceStatsAsString = stats2string(await summarizeSlicerStats(stats))
 
 	if(options.api) {

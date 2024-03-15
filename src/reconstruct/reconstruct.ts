@@ -27,11 +27,12 @@ import type {
 import {
 	RType,
 	foldAstStateful
+	, EmptyArgument
 } from '../r-bridge'
-import { log, LogLevel } from '../util/log'
-import { guard, isNotNull } from '../util/assert'
+import { expensiveTrace, log, LogLevel } from '../util/log'
+import { guard } from '../util/assert'
 import type { MergeableRecord } from '../util/objects'
-//
+
 type Selection = Set<NodeId>
 interface PrettyPrintLine {
 	line:   string
@@ -49,13 +50,7 @@ const getLexeme = (n: RNodeWithParent) => n.info.fullLexeme ?? n.lexeme ?? ''
 
 const reconstructAsLeaf = (leaf: RNodeWithParent, configuration: ReconstructionConfiguration): Code => {
 	const selectionHasLeaf = configuration.selection.has(leaf.info.id) || configuration.autoSelectIf(leaf)
-	if(selectionHasLeaf) {
-		return foldToConst(leaf)
-	} else {
-		return []
-	}
-	// reconstructLogger.trace(`reconstructAsLeaf: ${leaf.info.id} (${selectionHasLeaf ? 'y' : 'n'}):  ${JSON.stringify(wouldBe)}`)
-	// return selectionHasLeaf ? wouldBe : []
+	return selectionHasLeaf ? foldToConst(leaf) : []
 }
 
 const foldToConst = (n: RNodeWithParent): Code => plain(getLexeme(n))
@@ -64,21 +59,25 @@ function indentBy(lines: Code, indent: number): Code {
 	return lines.map(({ line, indent: i }) => ({ line, indent: i + indent }))
 }
 
-function reconstructExpressionList(exprList: RExpressionList<ParentInformation>, expressions: Code[], configuration: ReconstructionConfiguration): Code {
-	if(isSelected(configuration, exprList)) {
-		return plain(getLexeme(exprList))
-	}
-
+function reconstructExpressionList(exprList: RExpressionList<ParentInformation>, _grouping: [Code, Code] | undefined,  expressions: Code[]): Code {
 	const subExpressions = expressions.filter(e => e.length > 0)
 	if(subExpressions.length === 0) {
 		return []
 	} else if(subExpressions.length === 1) {
-		return subExpressions[0]
+		const [fst] = subExpressions
+		const g = exprList.grouping
+
+		if(g && fst.length > 0) {
+			fst[0].line = `${g[0].content} ${fst[0].line}`
+			fst[fst.length - 1].line = `${fst[fst.length - 1].line} ${g[1].content}`
+		}
+		return fst
 	} else {
+		const g = exprList.grouping
 		return [
-			{ line: '{', indent: 0 },
+			...(g ? plain(g[0].content) : plain('{')),
 			...indentBy(subExpressions.flat(), 1),
-			{ line: '}', indent: 0 }
+			...(g ? plain(g[1].content) : plain('}'))
 		]
 	}
 }
@@ -260,18 +259,19 @@ function reconstructParameters(parameters: RParameter<ParentInformation>[]): str
 	})
 }
 
+function isNotEmptyArgument(a: Code | typeof EmptyArgument): a is Code {
+	return a !== EmptyArgument
+}
 
-function reconstructFoldAccess(node: RAccess<ParentInformation>, accessed: Code, access: string | (Code | null)[], configuration: ReconstructionConfiguration): Code {
+function reconstructFoldAccess(node: RAccess<ParentInformation>, accessed: Code, access: readonly (Code | typeof EmptyArgument)[], configuration: ReconstructionConfiguration): Code {
 	if(isSelected(configuration, node)) {
 		return plain(getLexeme(node))
 	}
 
 	if(accessed.length === 0) {
-		if(typeof access === 'string') {
-			return []
-		} else {
-			return access.filter(isNotNull).flat()
-		}
+		return access.filter(isNotEmptyArgument).flat()
+	} else if(access.every(a => a === EmptyArgument || a.length === 0)) {
+		return accessed
 	}
 
 	return plain(getLexeme(node))
@@ -313,9 +313,9 @@ function reconstructFunctionDefinition(definition: RFunctionDefinition<ParentInf
 	const parameters = reconstructParameters(definition.parameters).join(', ')
 	if(body.length <= 1) {
 		// 'inline'
-		const bodyStr = body.length === 0 ? '' : `${body[0].line} ` /* add suffix space */
+		const bodyStr = body.length === 0 ? '' : `${body[0].line}`
 		// we keep the braces in every case because I do not like no-brace functions
-		return [{ line: `function(${parameters}) { ${bodyStr}}`, indent: 0 }]
+		return [{ line: `function(${parameters}) ${bodyStr}`, indent: 0 }]
 	} else if(body[0].line === '{' && body[body.length - 1].line === '}') {
 		// 'block'
 		return [
@@ -326,7 +326,7 @@ function reconstructFunctionDefinition(definition: RFunctionDefinition<ParentInf
 	} else {
 		// unknown -> we add the braces just to be sure
 		return [
-			{ line: `function(${parameters}) {`, indent: 0 },
+			{ line: `function(${parameters})`, indent: 0 },
 			...indentBy(body, 1),
 			{ line: '}', indent: 0 }
 		]
@@ -334,20 +334,19 @@ function reconstructFunctionDefinition(definition: RFunctionDefinition<ParentInf
 
 }
 
-function reconstructSpecialInfixFunctionCall(args: (Code | undefined)[], call: RFunctionCall<ParentInformation>): Code {
+function reconstructSpecialInfixFunctionCall(args: (Code | typeof EmptyArgument)[], call: RFunctionCall<ParentInformation>): Code {
 	guard(args.length === 2, () => `infix special call must have exactly two arguments, got: ${args.length} (${JSON.stringify(args)})`)
 	guard(call.flavor === 'named', `infix special call must be named, got: ${call.flavor}`)
-	const lhs = args[0]
-	const rhs = args[1]
+	const [lhs, rhs] = args
 
 	if((lhs === undefined || lhs.length === 0) && (rhs === undefined || rhs.length === 0)) {
 		return []
 	}
 	// else if (rhs === undefined || rhs.length === 0) {
 	// if rhs is undefined we still  have to keep both now, but reconstruct manually :/
-	if(lhs !== undefined && lhs.length > 0) {
+	if(lhs !== EmptyArgument && lhs.length > 0) {
 		const lhsText = lhs.map(l => `${getIndentString(l.indent)}${l.line}`).join('\n')
-		if(rhs !== undefined && rhs.length > 0) {
+		if(rhs !== EmptyArgument && rhs.length > 0) {
 			const rhsText = rhs.map(l => `${getIndentString(l.indent)}${l.line}`).join('\n')
 			return plain(`${lhsText} ${call.functionName.content} ${rhsText}`)
 		} else {
@@ -357,7 +356,7 @@ function reconstructSpecialInfixFunctionCall(args: (Code | undefined)[], call: R
 	return plain(`${getLexeme(call.arguments[0] as RArgument<ParentInformation>)} ${call.functionName.content} ${getLexeme(call.arguments[1] as RArgument<ParentInformation>)}`)
 }
 
-function reconstructFunctionCall(call: RFunctionCall<ParentInformation>, functionName: Code, args: (Code | undefined)[], configuration: ReconstructionConfiguration): Code {
+function reconstructFunctionCall(call: RFunctionCall<ParentInformation>, functionName: Code, args: (Code | typeof EmptyArgument)[], configuration: ReconstructionConfiguration): Code {
 	if(call.infixSpecial === true) {
 		return reconstructSpecialInfixFunctionCall(args, call)
 	}
@@ -415,26 +414,16 @@ export function autoSelectLibrary(node: RNode<ParentInformation>): boolean {
 // escalates with undefined if all are undefined
 const reconstructAstFolds: StatefulFoldFunctions<ParentInformation, ReconstructionConfiguration, Code> = {
 	// we just pass down the state information so everyone has them
-	down:        (_n, c) => c,
-	foldNumber:  reconstructAsLeaf,
-	foldString:  reconstructAsLeaf,
-	foldLogical: reconstructAsLeaf,
-	foldSymbol:  reconstructAsLeaf,
-	foldAccess:  reconstructFoldAccess,
-	binaryOp:    {
-		foldLogicalOp:    reconstructBinaryOp,
-		foldArithmeticOp: reconstructBinaryOp,
-		foldComparisonOp: reconstructBinaryOp,
-		foldAssignment:   reconstructBinaryOp,
-		foldPipe:         reconstructBinaryOp,
-		foldModelFormula: reconstructBinaryOp
-	},
-	unaryOp: {
-		foldArithmeticOp: reconstructUnaryOp,
-		foldLogicalOp:    reconstructUnaryOp,
-		foldModelFormula: reconstructUnaryOp
-	},
-	other: {
+	down:         (_n, c) => c,
+	foldNumber:   reconstructAsLeaf,
+	foldString:   reconstructAsLeaf,
+	foldLogical:  reconstructAsLeaf,
+	foldSymbol:   reconstructAsLeaf,
+	foldAccess:   reconstructFoldAccess,
+	foldBinaryOp: reconstructBinaryOp,
+	foldPipe:     reconstructBinaryOp,
+	foldUnaryOp:  reconstructUnaryOp,
+	other:        {
 		foldComment:       reconstructAsLeaf,
 		foldLineDirective: reconstructAsLeaf
 	},
@@ -490,7 +479,7 @@ function removeOuterExpressionListIfApplicable(result: PrettyPrintLine[], autoSe
  * @returns The number of times `autoSelectIf` triggered, as well as the reconstructed code itself.
  */
 export function reconstructToCode<Info>(ast: NormalizedAst<Info>, selection: Selection, autoSelectIf: AutoSelectPredicate = autoSelectLibrary): ReconstructionResult {
-	if(reconstructLogger.settings.minLevel >= LogLevel.Trace) {
+	if(reconstructLogger.settings.minLevel <= LogLevel.Trace) {
 		reconstructLogger.trace(`reconstruct ast with ids: ${JSON.stringify([...selection])}`)
 	}
 
@@ -507,9 +496,7 @@ export function reconstructToCode<Info>(ast: NormalizedAst<Info>, selection: Sel
 	// fold of the normalized ast
 	const result = foldAstStateful(ast.ast, { selection, autoSelectIf: autoSelectIfWrapper }, reconstructAstFolds)
 
-	if(reconstructLogger.settings.minLevel >= LogLevel.Trace) {
-		reconstructLogger.trace('reconstructed ast before string conversion: ', JSON.stringify(result))
-	}
+	expensiveTrace(reconstructLogger, () => `reconstructed ast before string conversion: ${JSON.stringify(result)}`)
 
 	return removeOuterExpressionListIfApplicable(result, autoSelected)
 }

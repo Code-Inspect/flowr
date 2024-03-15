@@ -1,5 +1,5 @@
 import { jsonReplacer } from '../../util/json'
-import type { DataflowInformation } from '../../dataflow/internal/info'
+import type { DataflowInformation } from '../../dataflow/info'
 import type { QuadSerializationConfiguration } from '../../util/quads'
 import { df2quads } from '../../dataflow/graph/quads'
 import { graphToMermaid, graphToMermaidUrl } from '../../util/mermaid'
@@ -50,7 +50,7 @@ export function dataflowGraphToJson(df: DataflowInformation): string {
 }
 
 export function dataflowGraphToMermaid(df: DataflowInformation, idMap: DataflowMap): string {
-	return graphToMermaid(df.graph, idMap)
+	return graphToMermaid({ graph: df.graph, dataflowIdMap: idMap }).string
 }
 
 export function dataflowGraphToMermaidUrl(df: DataflowInformation, idMap: DataflowMap): string {

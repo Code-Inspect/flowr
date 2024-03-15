@@ -25,7 +25,8 @@ describe('Simple', withShell(shell => {
 
 	describe('Access', () => {
 		for(const [code, id, expected] of [
-			['a[3]', '0', 'a[3]' ],
+			/* we are interested in 'a' not in the result of the access*/
+			['a[3]', '0', 'a' ],
 			['a[x]', '1', 'x' ]
 		]) {
 			assertReconstructed(code, shell, code, id, expected)
@@ -101,8 +102,11 @@ a <- foo({
 
     c <- 3
     })`)
-		assertReconstructed('Reconstruct access in pipe', shell, `
+		assertReconstructed('Reconstruct access in pipe (variable)', shell, `
 ls <- x[[1]] %>% st_cast()
-class(ls)`, '2', 'x[[1]]')
+class(ls)`, '2', 'x')
 	})
+	assertReconstructed('Reconstruct access in pipe (access)', shell, `
+ls <- x[[1]] %>% st_cast()
+class(ls)`, '5', 'x[[1]]')
 }))

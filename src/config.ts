@@ -2,7 +2,7 @@ import type { MergeableRecord } from './util/objects'
 import { deepMergeObject } from './util/objects'
 import path from 'path'
 import fs from 'fs'
-import { log } from './util/log'
+import { log, LogLevel } from './util/log'
 import { getParentDirectory } from './util/files'
 import Joi from 'joi'
 
@@ -66,7 +66,9 @@ function parseConfigOptions(workingDirectory: string, configFile: string): Flowr
 				if(!validate.error) {
 					// assign default values to all config options except for the specified ones
 					const ret = deepMergeObject(defaultConfigOptions, parsed)
-					log.info(`Using config ${JSON.stringify(ret)} from ${configPath}`)
+					if(log.settings.minLevel <= LogLevel.Info) {
+						log.info(`Using config ${JSON.stringify(ret)} from ${configPath}`)
+					}
 					return ret
 				} else {
 					log.error(`Failed to validate config file at ${configPath}: ${validate.error.message}`)
@@ -79,6 +81,8 @@ function parseConfigOptions(workingDirectory: string, configFile: string): Flowr
 		searchPath = getParentDirectory(searchPath)
 	} while(fs.existsSync(searchPath))
 
-	log.info(`Using default config ${JSON.stringify(defaultConfigOptions)}`)
+	if(log.settings.minLevel <= LogLevel.Info) {
+		log.info(`Using default config ${JSON.stringify(defaultConfigOptions)}`)
+	}
 	return defaultConfigOptions
 }

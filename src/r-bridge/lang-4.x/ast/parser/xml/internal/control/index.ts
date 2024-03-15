@@ -1,3 +1,3 @@
-export * from './if-then'
-export * from './if-then-else'
+export * from './normalize-if-then'
+export * from './normalize-if-then-else'
 

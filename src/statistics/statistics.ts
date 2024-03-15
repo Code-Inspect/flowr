@@ -12,9 +12,9 @@ import fs from 'fs'
 import { log } from '../util/log'
 import type { MetaStatistics } from './meta-statistics'
 import { initialMetaStatistics } from './meta-statistics'
-import type { StepResults } from '../core'
-import { SteppingSlicer } from '../core'
 import { jsonReplacer, jsonRetriever } from '../util/json'
+import type { StepResults } from '../core/steps/output'
+import { SteppingSlicer } from '../core/stepping-slicer'
 
 /**
  * By default, {@link extractUsageStatistics} requires a generator, but sometimes you already know all the files

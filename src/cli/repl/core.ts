@@ -3,7 +3,7 @@
  *
  * @module
  */
-import { RShell } from '../../r-bridge'
+import { RShell, RShellReviveOptions } from '../../r-bridge'
 import { bold } from '../../statistics'
 import { prompt } from './prompt'
 import type { ReplOutput } from './commands'
@@ -72,17 +72,16 @@ export async function replProcessAnswer(output: ReplOutput, expr: string, shell:
  * - Starting with a colon `:`, indicating a command (probe `:help`, and refer to {@link commands}) </li>
  * - Starting with anything else, indicating default R code to be directly executed. If you kill the underlying shell, that is on you! </li>
  *
- * @param shell     - The shell to use, if you do not pass one it will automatically create a new one with the `revive` option set to 'always'
- * @param rl        - A potentially customized readline interface to be used for the repl to *read* from the user, we write the output with the {@link ReplOutput | `output` } interface.
- *                    If you want to provide a custom one but use the same `completer`, refer to {@link replCompleter}.
- *                    For the default arguments, see {@link DEFAULT_REPL_READLINE_CONFIGURATION}.
- * @param output    - Defines two methods that every function in the repl uses to output its data.
+ * @param shell       - The shell to use, if you do not pass one it will automatically create a new one with the `revive` option set to 'always'
+ * @param rl          - A potentially customized readline interface to be used for the repl to *read* from the user, we write the output with the {@link ReplOutput|`output` } interface.
+ *                      If you want to provide a custom one but use the same `completer`, refer to {@link replCompleter}.
+ *                      For the default arguments, see {@link DEFAULT_REPL_READLINE_CONFIGURATION}.
+ * @param output      - Defines two methods that every function in the repl uses to output its data.
  * @param historyFile - The file to use for persisting the repl's history. Passing undefined causes history not to be saved.
  *
  * For the execution, this function makes use of {@link replProcessAnswer}
- *
  */
-export async function repl(shell = new RShell({ revive: 'always' }), rl = readline.createInterface(DEFAULT_REPL_READLINE_CONFIGURATION), output = standardReplOutput, historyFile: string | undefined = defaultHistoryFile) {
+export async function repl(shell = new RShell({ revive: RShellReviveOptions.Always }), rl = readline.createInterface(DEFAULT_REPL_READLINE_CONFIGURATION), output = standardReplOutput, historyFile: string | undefined = defaultHistoryFile) {
 	if(historyFile) {
 		rl.on('history', h => fs.writeFileSync(historyFile, h.join('\n'), { encoding: 'utf-8' }))
 	}

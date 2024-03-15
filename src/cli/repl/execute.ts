@@ -1,4 +1,4 @@
-import { log } from '../../util/log'
+import { log, LogLevel } from '../../util/log'
 import cp from 'child_process'
 import type { Readable, Writable } from 'stream'
 import readline from 'readline'
@@ -45,7 +45,9 @@ export function stdioCaptureProcessor(stdio: Stdio, onStdOutLine: (msg: string) 
  * @param exitOnError - If set to `true`, the process will exit with the exit code of the script.
  */
 export async function waitOnScript(module: string, args: string[], io?: StdioProcessor, exitOnError = false): Promise<void> {
-	log.info(`starting script ${module} with args ${JSON.stringify(args)}`)
+	if(log.settings.minLevel <= LogLevel.Info) {
+		log.info(`starting script ${module} with args ${JSON.stringify(args)}`)
+	}
 	const child = cp.fork(module, args, {
 		silent: io !== undefined
 	})

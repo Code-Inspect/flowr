@@ -21,10 +21,7 @@ describe('Range', () => {
 						for(const endColumn of pool) {
 							assert.deepStrictEqual(
 								rangeFrom(startLine, startColumn, endLine, endColumn),
-								{
-									start: { line: startLine, column: startColumn },
-									end:   { line: endLine, column: endColumn },
-								},
+								[startLine, startColumn, endLine, endColumn],
 								'with numbers'
 							)
 							assert.deepStrictEqual(
@@ -34,10 +31,7 @@ describe('Range', () => {
 									`${endLine}`,
 									`${endColumn}`
 								),
-								{
-									start: { line: startLine, column: startColumn },
-									end:   { line: endLine, column: endColumn },
-								},
+								[startLine, startColumn, endLine, endColumn],
 								'with strings'
 							)
 						}

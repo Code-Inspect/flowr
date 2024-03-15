@@ -22,6 +22,7 @@
     "benchmark": "npm run build && node dist/src/cli/benchmark-app.js",
     "summarizer": "ts-node src/cli/summarizer-app.ts",
     "export-quads": "ts-node src/cli/export-quads-app.ts",
+    "capabilities-markdown": "ts-node src/r-bridge/data/print.ts",
     "build": "tsc --project .",
     "lint-local": "eslint src/ test/ --rule \"no-warning-comments: off\"",
     "lint": "npm run license-compat -- --summary && eslint src/ test/",
@@ -44,20 +45,23 @@
   "mocha": {
     "require": "ts-node/register",
     "timeout": 60000,
-    "spec": "test/**/*.spec.ts"
+    "spec": "test/**/*.spec.ts",
+    "source-map": true,
+    "recursive": true,
+    "exit": true,
+    "produce-source-map": true
   },
   "nyc": {
     "all": true,
     "per-file": true,
     "check-coverage": false,
-    "skip-full": false,
+    "skip-full": true,
     "lines": 70,
     "extension": [
       ".ts"
     ],
     "include": "src/**/*.ts",
     "reporter": [
-      "html",
       "text",
       "lcov",
       "cobertura"
@@ -208,7 +212,7 @@
       "check-file/filename-naming-convention": [
         "error",
         {
-          "**/*.ts": "?([A-Z])+([a-z])*((-|.)?([A-Z])+([a-z]))"
+          "**/*.ts": "?([0-9]+-)?([A-Z])+([a-z])*((-|.)?([A-Z])+([a-z]))"
         }
       ],
       "check-file/folder-match-with-fex": [

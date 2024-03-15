@@ -4,6 +4,8 @@ statistics-out*/
 **/*.R.slice
 **/*.R.stats
 **/*.R*.dataflow
+tmp*log*
+temp*log*
 benchmark-*.json
 
 ### VisualStudioCode template

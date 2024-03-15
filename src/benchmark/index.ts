@@ -1,3 +1,3 @@
 export * from './stats'
-export * from './slicer'
+export * from './benchmark-slicer'
 export * from './stopwatch'

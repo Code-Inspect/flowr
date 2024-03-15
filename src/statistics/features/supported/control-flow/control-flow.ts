@@ -2,7 +2,7 @@ import type { Feature, FeatureProcessorInput } from '../../feature'
 import type { Writable } from 'ts-essentials'
 import { emptyCommonSyntaxTypeCounts, updateCommonSyntaxTypeCounts } from '../../common-syntax-probability'
 import type { ParentInformation, RExpressionList, RNodeWithParent } from '../../../../r-bridge'
-import { RType, visitAst } from '../../../../r-bridge'
+import { EmptyArgument , RType, visitAst } from '../../../../r-bridge'
 import { postProcess } from './post-process'
 
 const initialControlflowInfo = {
@@ -28,7 +28,7 @@ function visitIfThenElse(info: ControlflowInfo, input: FeatureProcessorInput): v
 			if(node.type !== RType.IfThenElse) {
 				if(node.type === RType.FunctionCall && node.flavor === 'named' && node.functionName.content === 'switch') {
 					const initialArg = node.arguments[0]
-					if(initialArg) {
+					if(initialArg !== EmptyArgument) {
 						info.switchCase = updateCommonSyntaxTypeCounts(info.switchCase, initialArg)
 					}
 				}

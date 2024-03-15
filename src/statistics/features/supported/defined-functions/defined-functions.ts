@@ -2,6 +2,7 @@ import type { Feature, FeatureProcessorInput } from '../../feature'
 import { appendStatisticsFile } from '../../../output'
 import type { Writable } from 'ts-essentials'
 import type { SourcePosition } from '../../../../util/range'
+import { getRangeStart } from '../../../../util/range'
 import type { MergeableRecord } from '../../../../util/objects'
 import type {
 	ParentInformation,
@@ -47,22 +48,22 @@ export interface SingleFunctionDefinitionInformation extends MergeableRecord {
 }
 
 
-function retrieveAllCallsites(input: FeatureProcessorInput, node: RFunctionDefinition<ParentInformation>, recursiveCalls: RNodeWithParent[]) {
+function retrieveAllCallsites(input: FeatureProcessorInput, node: RFunctionDefinition<ParentInformation>, recursiveCalls: readonly RNodeWithParent[]): SourcePosition[] {
 	const dfStart = input.dataflow.graph.outgoingEdges(node.info.id)
 	const callsites = []
 	for(const [target, edge] of dfStart ?? []) {
 		if(!edge.types.has(EdgeType.Calls)) {
 			continue
 		}
-		const loc = input.normalizedRAst.idMap.get(target)?.location?.start
+		const loc = input.normalizedRAst.idMap.get(target)?.location
 		if(loc) {
-			callsites.push(loc)
+			callsites.push(getRangeStart(loc))
 		}
 	}
 	for(const call of recursiveCalls) {
 		const loc = call.location
 		if(loc) {
-			callsites.push(loc.start)
+			callsites.push(getRangeStart(loc))
 		}
 	}
 	return callsites
@@ -90,7 +91,7 @@ function visitDefinitions(info: FunctionDefinitionInfo, input: FeatureProcessorI
 			const returnTypes = fnDefinition.exitPoints.map(ep => graph.get(ep, true)).filter(isNotUndefined)
 				.map(([vertex]) => ({
 					explicit: vertex.tag === 'function-call' && vertex.name === 'return',
-					location: input.normalizedRAst.idMap.get(vertex.id)?.location?.start ?? { line: -1, column: -1 }
+					location: getRangeStart(input.normalizedRAst.idMap.get(vertex.id)?.location) ?? [-1, -1]
 				}))
 
 			if(definitionStack.length > 0) {
@@ -148,7 +149,7 @@ function visitDefinitions(info: FunctionDefinitionInfo, input: FeatureProcessorI
 			const lexemeSplit= lexeme?.split('\n')
 
 			allDefinitions.push({
-				location:           node.location.start,
+				location:           getRangeStart(node.location),
 				callsites:          retrieveAllCallsites(input, node, recursiveCalls),
 				numberOfParameters: node.parameters.length,
 				returns:            returnTypes,

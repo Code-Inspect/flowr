@@ -19,7 +19,7 @@ export type ClusterValueInfoMap = DefaultMap<string, ContextsWithCount>
 export interface ClusterReport extends MergeableRecord {
 	/** The input file which has been clustered */
 	readonly filepath: string
-	/** Maps each context encountered (i.e., every file which contains something associated with the feature) to a unique id, used in the {@link ClusterReport#valueInfoMap | valueInfoMap}. */
+	/** Maps each context encountered (i.e., every file which contains something associated with the feature) to a unique id, used in the {@link ClusterReport#valueInfoMap|valueInfoMap}. */
 	contextIdMap:      ClusterContextIdMap
 	/**
    * Counts which contexts contained which values of a feature.

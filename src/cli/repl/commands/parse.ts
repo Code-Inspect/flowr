@@ -1,23 +1,24 @@
-import type { XmlBasedJson } from '../../../r-bridge'
-import { childrenKey , attributesKey, contentKey , getKeysGuarded, RawRType, requestFromInput } from '../../../r-bridge'
-
-
+import type {
+	XmlBasedJson,
+} from '../../../r-bridge'
 import {
-	extractLocation,
-	getTokenType,
-	objectWithArrUnwrap,
-} from '../../../r-bridge/lang-4.x/ast/parser/xml/internal'
+	getKeyGuarded,
+	RawRType,
+	requestFromInput
+} from '../../../r-bridge'
 import type { OutputFormatter } from '../../../statistics'
 import { FontStyles } from '../../../statistics'
 import type { ReplCommand } from './main'
-import { SteppingSlicer } from '../../../core'
 import { prepareParsedData } from '../../../r-bridge/lang-4.x/ast/parser/json/format'
 import { convertPreparedParsedData } from '../../../r-bridge/lang-4.x/ast/parser/json/parser'
+import { attributesKey, childrenKey, contentKey } from '../../../r-bridge/lang-4.x/ast/parser/xml'
+import { extractLocation, getTokenType, objectWithArrUnwrap } from '../../../r-bridge/lang-4.x/ast/parser/xml/normalize-meta'
+import { SteppingSlicer } from '../../../core/stepping-slicer'
 
 type DepthList =  { depth: number, node: XmlBasedJson, leaf: boolean }[]
 
 function toDepthMap(xml: XmlBasedJson): DepthList {
-	const root = getKeysGuarded<XmlBasedJson>(xml, RawRType.ExpressionList)
+	const root = getKeyGuarded<XmlBasedJson>(xml, RawRType.ExpressionList)
 	const visit = [ { depth: 0, node: root } ]
 	const result: DepthList = []
 
@@ -73,11 +74,11 @@ function initialIndentation(i: number, depth: number, deadDepths: Set<number>, n
 }
 
 function retrieveLocationString(locationRaw: XmlBasedJson) {
-	const extracted = extractLocation(locationRaw)
-	if(extracted.start.line === extracted.end.line && extracted.start.column === extracted.end.column) {
-		return ` (${extracted.start.line}:${extracted.start.column})`
+	const [sl, sc, el, ec] = extractLocation(locationRaw)
+	if(sl === el && sc === ec) {
+		return ` (${sl}:${sc})`
 	} else {
-		return ` (${extracted.start.line}:${extracted.start.column}─${extracted.end.line}:${extracted.end.column})`
+		return ` (${sl}:${sc}─${el}:${ec})`
 	}
 }
 

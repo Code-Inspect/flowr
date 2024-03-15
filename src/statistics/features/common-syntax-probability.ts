@@ -64,7 +64,7 @@ function incrementEntry<T extends string | number | symbol>(map: Record<T, bigin
 /**
  * Updates the given counts based on the type of the given node.
  */
-export function updateCommonSyntaxTypeCounts(current: CommonSyntaxTypeCounts, ...nodes: RNodeWithParent[]): CommonSyntaxTypeCounts {
+export function updateCommonSyntaxTypeCounts(current: CommonSyntaxTypeCounts, ...nodes: readonly RNodeWithParent[]): CommonSyntaxTypeCounts {
 	current.total++
 	if(nodes.length === 0) {
 		current.empty++

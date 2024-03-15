@@ -97,7 +97,7 @@ describe('Data Access', withShell(shell => {
 			]
 		},
 		{
-			name:     'named and slotted access',
+			name:     'named and slot access',
 			code:     'a$hello; a$"world"; a@hello; a@"world"',
 			expected: {
 				byName: 2,
@@ -299,7 +299,7 @@ describe('Data Access', withShell(shell => {
 			]
 		},
 		{
-			name:     'nested named and slotted access',
+			name:     'nested named and slot access',
 			code:     'a$hello$"world"; a@hello@"world"',
 			expected: {
 				byName:                2,

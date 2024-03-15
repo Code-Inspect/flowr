@@ -11,9 +11,11 @@ import { jsonReplacer } from '../util/json'
 import fs from 'fs'
 import { guard } from '../util/assert'
 import { retrieveArchiveName } from './common/features'
-import { printStepResult } from '../core'
-import { StepOutputFormat } from '../core/print/print'
+import { printStepResult, StepOutputFormat } from '../core/print/print'
 import { date2string } from '../util/time'
+import { PARSE_WITH_R_SHELL_STEP } from '../core/steps/all/core/00-parse'
+import { NORMALIZE } from '../core/steps/all/core/10-normalize'
+import { STATIC_DATAFLOW } from '../core/steps/all/core/20-dataflow'
 import { create } from 'tar'
 import { extractCFG } from '../util/cfg/cfg'
 
@@ -89,9 +91,9 @@ async function getStatsForSingleFile() {
 		if(options['dump-json']) {
 			const [, output] = [...stats.outputs.entries()][0]
 			const cfg = extractCFG(output.normalize)
-			statisticsFileProvider.append('output-json', 'parse', await printStepResult('parse', output.parse, StepOutputFormat.Json))
-			statisticsFileProvider.append('output-json', 'normalize', await printStepResult('normalize', output.normalize, StepOutputFormat.Json))
-			statisticsFileProvider.append('output-json', 'dataflow', await printStepResult('dataflow', output.dataflow, StepOutputFormat.Json))
+			statisticsFileProvider.append('output-json', 'parse', await printStepResult(PARSE_WITH_R_SHELL_STEP, output.parse, StepOutputFormat.Json))
+			statisticsFileProvider.append('output-json', 'normalize', await printStepResult(NORMALIZE, output.normalize, StepOutputFormat.Json))
+			statisticsFileProvider.append('output-json', 'dataflow', await printStepResult(STATIC_DATAFLOW, output.dataflow, StepOutputFormat.Json))
 			statisticsFileProvider.append('output-json', 'cfg', JSON.stringify(cfg, jsonReplacer))
 		}
 

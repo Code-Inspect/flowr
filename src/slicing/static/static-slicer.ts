@@ -4,29 +4,18 @@ import type {
 	DataflowGraphVertexInfo,
 	REnvironmentInformation
 } from '../../dataflow'
-import {
-	EdgeType,
-	graphToMermaidUrl,
-	initializeCleanEnvironments
-} from '../../dataflow'
+import { BuiltIn, shouldTraverseEdge, EdgeType, initializeCleanEnvironments } from '../../dataflow'
 import { guard } from '../../util/assert'
 import type {
-	DecoratedAstMap,
 	NodeId,
-	NormalizedAst,
-	RNodeWithParent } from '../../r-bridge'
-import {
-	collectAllIds,
-	RType
+	NormalizedAst
 } from '../../r-bridge'
-import { log, LogLevel } from '../../util/log'
-import { getAllLinkedFunctionDefinitions } from '../../dataflow/internal/linker'
-import { overwriteEnvironments, pushLocalEnvironment, resolveByName } from '../../dataflow/environments'
+import { expensiveTrace, log } from '../../util/log'
 import objectHash from 'object-hash'
-import { DefaultMap } from '../../util/defaultmap'
-import { LocalScope } from '../../dataflow/environments/scopes'
 import type { DecodedCriteria, SlicingCriteria } from '../criterion'
 import { convertAllSlicingCriteriaToIds } from '../criterion'
+import { overwriteEnvironment, pushLocalEnvironment, resolveByName } from '../../dataflow/environments'
+import { getAllLinkedFunctionDefinitions } from '../../dataflow/internal/linker'
 
 export const slicerLogger = log.getSubLogger({ name: 'slicer' })
 
@@ -47,11 +36,11 @@ interface NodeToSlice {
 
 type Fingerprint = string
 
-function envFingerprint(env: REnvironmentInformation): string {
+function envFingerprint(env: REnvironmentInformation): Fingerprint {
 	return objectHash(env, { excludeKeys: key => key === 'id' })
 }
 
-function fingerprint(id: NodeId, envFingerprint: string, onlyForSideEffects: boolean): Fingerprint {
+function fingerprint(id: NodeId, envFingerprint: Fingerprint, onlyForSideEffects: boolean): Fingerprint {
 	return `${id}-${envFingerprint}-${onlyForSideEffects ? '0' : '1'}`
 }
 
@@ -78,9 +67,9 @@ export interface SliceResult {
 
 class VisitingQueue {
 	private readonly threshold: number
-	private timesHitThreshold = 0
-	private seen = new Map<Fingerprint, NodeId>()
-	private idThreshold = new DefaultMap<NodeId, number>(() => 0)
+	private timesHitThreshold                 = 0
+	private seen                              = new Map<Fingerprint, NodeId>()
+	private idThreshold                       = new Map<NodeId, number>()
 	private queue:              NodeToSlice[] = []
 
 	constructor(threshold: number) {
@@ -88,7 +77,8 @@ class VisitingQueue {
 	}
 
 	public add(target: NodeId, env: REnvironmentInformation, envFingerprint: string, onlyForSideEffects: boolean): void {
-		const idCounter = this.idThreshold.get(target)
+		const idCounter = this.idThreshold.get(target) ?? 0
+
 		if(idCounter > this.threshold) {
 			slicerLogger.warn(`id: ${target} has been visited ${idCounter} times, skipping`)
 			this.timesHitThreshold++
@@ -105,11 +95,11 @@ class VisitingQueue {
 		}
 	}
 
-	public next(): NodeToSlice | undefined {
-		return this.queue.pop()
+	public next(): NodeToSlice {
+		return this.queue.pop() as NodeToSlice
 	}
 
-	public has(): boolean {
+	public nonEmpty(): boolean {
 		return this.queue.length > 0
 	}
 
@@ -125,97 +115,73 @@ class VisitingQueue {
 /**
  * This returns the ids to include in the slice, when slicing with the given seed id's (must be at least one).
  * <p>
- * The returned ids can be used to {@link reconstructToCode | reconstruct the slice to R code}.
+ * The returned ids can be used to {@link reconstructToCode|reconstruct the slice to R code}.
  */
 export function staticSlicing(dataflowGraph: DataflowGraph, ast: NormalizedAst, criteria: SlicingCriteria, threshold = 75): Readonly<SliceResult> {
 	guard(criteria.length > 0, 'must have at least one seed id to calculate slice')
 	const decodedCriteria = convertAllSlicingCriteriaToIds(criteria, ast)
-	const idMap = ast.idMap
-	if(slicerLogger.settings.minLevel <= LogLevel.Trace) {
-		slicerLogger.trace(`calculating slice for ${decodedCriteria.length} seed criteria: ${decodedCriteria.map(s => JSON.stringify(s)).join(', ')}`)
-	}
+	expensiveTrace(slicerLogger, () =>`calculating slice for ${decodedCriteria.length} seed criteria: ${decodedCriteria.map(s => JSON.stringify(s)).join(', ')}`)
 	const queue = new VisitingQueue(threshold)
 
 	// every node ships the call environment which registers the calling environment
 	{
-		const basePrint = envFingerprint(initializeCleanEnvironments())
+		const emptyEnv = initializeCleanEnvironments()
+		const basePrint = envFingerprint(emptyEnv)
 		for(const startId of decodedCriteria) {
-			queue.add(startId.id, initializeCleanEnvironments(), basePrint, false)
+			queue.add(startId.id, emptyEnv, basePrint, false)
 		}
 	}
 
 
-	while(queue.has()) {
+	while(queue.nonEmpty()) {
 		const current = queue.next()
 
-		if(current === undefined) {
-			continue
-		}
+		const baseEnvironment = current.baseEnvironment
+		const baseId = current.id
+		const baseEnvFingerprint = envFingerprint(baseEnvironment)
 
-		const baseEnvFingerprint = envFingerprint(current.baseEnvironment)
-
-		const currentInfo = dataflowGraph.get(current.id, true)
-		// slicerLogger.trace(`visiting id: ${current.id} with name: ${currentInfo?.[0].name ?? '<unknown>'}`)
-
+		const currentInfo = dataflowGraph.get(baseId, true)
 		if(currentInfo === undefined) {
-			slicerLogger.warn(`id: ${current.id} must be in graph but can not be found, keep in slice to be sure`)
+			slicerLogger.warn(`id: ${baseId} must be in graph but can not be found, keep in slice to be sure`)
 			continue
 		}
 
-		if(currentInfo[0].tag === 'function-call' && !current.onlyForSideEffects) {
-			slicerLogger.trace(`${current.id} is a function call`)
-			sliceForCall(current, idMap, currentInfo[0], dataflowGraph, queue)
+		const [currentVertex, currentEdges] = currentInfo
+
+		if(currentVertex.tag === 'function-call' && !currentVertex.onlyBuiltin && !current.onlyForSideEffects) {
+			sliceForCall(current, currentVertex, dataflowGraph, queue)
 		}
 
-		const currentNode = idMap.get(current.id)
-		guard(currentNode !== undefined, () => `id: ${current.id} must be in dataflowIdMap is not in ${graphToMermaidUrl(dataflowGraph, idMap)}`)
-
-		for(const [target, edge] of currentInfo[1]) {
-			if(edge.types.has(EdgeType.SideEffectOnCall)) {
-				queue.add(target, current.baseEnvironment, baseEnvFingerprint, true)
+		const returns = [...currentEdges].filter(([_, edge]) => edge.types.has(EdgeType.Returns))
+		if(returns.length >= 1) {
+			for(const [target, _] of returns) {
+				queue.add(target, baseEnvironment, baseEnvFingerprint, false)
 			}
-			if(edge.types.has(EdgeType.Reads) || edge.types.has(EdgeType.DefinedBy) || edge.types.has(EdgeType.Argument) || edge.types.has(EdgeType.Calls) || edge.types.has(EdgeType.Relates) || edge.types.has(EdgeType.DefinesOnCall)) {
-				queue.add(target, current.baseEnvironment, baseEnvFingerprint, false)
+			continue
+		}
+
+		for(const [target, edge] of currentEdges) {
+			if(target === BuiltIn) {
+				continue
+			}
+			if(shouldTraverseEdge(edge.types)) {
+				queue.add(target, baseEnvironment, baseEnvFingerprint, false)
+			} else if(edge.types.has(EdgeType.SideEffectOnCall)) {
+				queue.add(target, baseEnvironment, baseEnvFingerprint, true)
 			}
 		}
-		for(const controlFlowDependency of addControlDependencies(currentInfo[0].id, idMap)) {
-			queue.add(controlFlowDependency, current.baseEnvironment, baseEnvFingerprint, false)
+		if(currentVertex.controlDependency) {
+			for(const cd of currentVertex.controlDependency) {
+				queue.add(cd, baseEnvironment, baseEnvFingerprint, false)
+			}
 		}
 	}
 
-	// slicerLogger.trace(`static slicing produced: ${JSON.stringify([...seen])}`)
 	return { ...queue.status(), decodedCriteria }
 }
 
 
-function addAllFrom(current: RNodeWithParent, collected: Set<NodeId>) {
-	for(const id of collectAllIds(current)) {
-		collected.add(id)
-	}
-}
-
-function addControlDependencies(source: NodeId, ast: DecoratedAstMap): Set<NodeId> {
-	const start = ast.get(source)
-
-	const collected = new Set<NodeId>()
-
-	let current = start
-	while(current !== undefined) {
-		if(current.type === RType.IfThenElse) {
-			addAllFrom(current.condition, collected)
-		} else if(current.type === RType.WhileLoop) {
-			addAllFrom(current.condition, collected)
-		} else if(current.type === RType.ForLoop) {
-			addAllFrom(current.variable, collected)
-			// vector not needed, if required, it is  linked by defined-by
-		}
-		// nothing to do for repeat and rest!
-		current = current.info.parent ? ast.get(current.info.parent) : undefined
-	}
-	return collected
-}
-
-function retrieveActiveEnvironment(callerInfo: DataflowGraphVertexInfo, baseEnvironment: REnvironmentInformation) {
+function retrieveActiveEnvironment(callerInfo: DataflowGraphVertexInfo, baseEnvironment: REnvironmentInformation): REnvironmentInformation {
 	let callerEnvironment = callerInfo.environment
 
 	if(baseEnvironment.level !== callerEnvironment.level) {
@@ -227,11 +193,11 @@ function retrieveActiveEnvironment(callerInfo: DataflowGraphVertexInfo, baseEnvi
 		}
 	}
 
-	return overwriteEnvironments(baseEnvironment, callerEnvironment)
+	return overwriteEnvironment(baseEnvironment, callerEnvironment)
 }
 
-//// returns the new threshold hit count
-function sliceForCall(current: NodeToSlice, idMap: DecoratedAstMap, callerInfo: DataflowGraphVertexInfo, dataflowGraph: DataflowGraph, queue: VisitingQueue): void {
+/** returns the new threshold hit count */
+function sliceForCall(current: NodeToSlice, callerInfo: DataflowGraphVertexInfo, dataflowGraph: DataflowGraph, queue: VisitingQueue): void {
 	// bind with call-local environments during slicing
 	const outgoingEdges = dataflowGraph.get(callerInfo.id, true)
 	guard(outgoingEdges !== undefined, () => `outgoing edges of id: ${callerInfo.id} must be in graph but can not be found, keep in slice to be sure`)
@@ -242,7 +208,7 @@ function sliceForCall(current: NodeToSlice, idMap: DecoratedAstMap, callerInfo: 
 	const activeEnvironment = retrieveActiveEnvironment(callerInfo, baseEnvironment)
 	const activeEnvironmentFingerprint = envFingerprint(activeEnvironment)
 
-	const functionCallDefs = resolveByName(callerInfo.name, LocalScope, activeEnvironment)?.map(d => d.nodeId) ?? []
+	const functionCallDefs = resolveByName(callerInfo.name, activeEnvironment)?.filter(d => d.definedAt !== BuiltIn)?.map(d => d.nodeId) ?? []
 
 	for(const [target, outgoingEdge] of outgoingEdges[1].entries()) {
 		if(outgoingEdge.types.has(EdgeType.Calls)) {
@@ -255,11 +221,11 @@ function sliceForCall(current: NodeToSlice, idMap: DecoratedAstMap, callerInfo: 
 	for(const [_, functionCallTarget] of functionCallTargets) {
 		// all those linked within the scopes of other functions are already linked when exiting a function definition
 		for(const openIn of (functionCallTarget as DataflowGraphVertexFunctionDefinition).subflow.in) {
-			const defs = resolveByName(openIn.name, LocalScope, activeEnvironment)
+			const defs = openIn.name ? resolveByName(openIn.name, activeEnvironment) : undefined
 			if(defs === undefined) {
 				continue
 			}
-			for(const def of defs) {
+			for(const def of defs.filter(d => d.nodeId !== BuiltIn)) {
 				queue.add(def.nodeId, baseEnvironment, baseEnvPrint, current.onlyForSideEffects)
 			}
 		}

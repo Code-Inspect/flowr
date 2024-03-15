@@ -1,6 +1,11 @@
 import { guard } from './assert'
 
 /**
+ * Returns the tail of an array (all elements except the first one).
+ */
+export type TailOfArray<T extends unknown[]> = T extends [infer _, ...infer Rest] ? Rest : never;
+
+/**
  * Splits the array every time the given predicate fires.
  * The element the split appears on will not be included!
  *
@@ -15,7 +20,7 @@ import { guard } from './assert'
  * // => [[], [], [], []]
  * ```
  */
-export function splitArrayOn<T>(arr: T[], predicate: (elem: T) => boolean): T[][] {
+export function splitArrayOn<T>(arr: readonly T[], predicate: (elem: T) => boolean): T[][] {
 	const result: T[][] = []
 	let current: T[] = []
 	let fired = false
@@ -33,6 +38,23 @@ export function splitArrayOn<T>(arr: T[], predicate: (elem: T) => boolean): T[][
 		result.push(current)
 	}
 	return result
+}
+
+/**
+ * Returns a tuple of two arrays, where the first one contains all elements for which the predicate returned true,
+ * and the second one contains all elements for which the predicate returned false.
+ */
+export function partitionArray<T>(arr: readonly T[], predicate: (elem: T) => boolean): [T[], T[]] {
+	const left: T[] = []
+	const right: T[] = []
+	for(const elem of arr) {
+		if(predicate(elem)) {
+			left.push(elem)
+		} else {
+			right.push(elem)
+		}
+	}
+	return [left, right]
 }
 
 /**
@@ -139,4 +161,19 @@ export function array2bag<T>(arr: T[]): Map<T, number> {
 		result.set(elem, (result.get(elem) ?? 0) + 1)
 	}
 	return result
+}
+
+export function arrayEqual<T>(a: readonly T[] | undefined, b: readonly T[] | undefined): boolean {
+	if(a === undefined || b === undefined) {
+		return a === b
+	}
+	if(a.length !== b.length) {
+		return false
+	}
+	for(let i = 0; i < a.length; ++i) {
+		if(a[i] !== b[i]) {
+			return false
+		}
+	}
+	return true
 }

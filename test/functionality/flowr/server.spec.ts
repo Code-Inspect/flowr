@@ -6,7 +6,6 @@ import { assert } from 'chai'
 import type { FileAnalysisRequestMessage, FileAnalysisResponseMessageJson } from '../../../src/cli/repl/server/messages/analysis'
 import type { DecoratedAstMap, ParentInformation } from '../../../src/r-bridge'
 import { requestFromInput } from '../../../src/r-bridge'
-import { LAST_PER_FILE_STEP, SteppingSlicer } from '../../../src/core'
 import { jsonReplacer } from '../../../src/util/json'
 import type {
 	ExecuteEndMessage,
@@ -14,6 +13,8 @@ import type {
 	ExecuteRequestMessage
 } from '../../../src/cli/repl/server/messages/repl'
 import { extractCFG } from '../../../src/util/cfg/cfg'
+import { SteppingSlicer } from '../../../src/core/stepping-slicer'
+import { LAST_PER_FILE_STEP } from '../../../src/core/steps/steps'
 
 describe('flowr', () => {
 	describe('Server', withShell(shell => {
@@ -90,9 +91,9 @@ describe('flowr', () => {
 
 			// this is hideous and only to unify the ids
 			const expected = JSON.stringify(results, jsonReplacer)
-				.replace(/"\.GlobalEnv","id":"\d+"/g, '')
+				.replace(/"global","id":"\d+"/g, '')
 			const got = JSON.stringify(response.results, jsonReplacer)
-				.replace(/"\.GlobalEnv","id":"\d+"/g, '')
+				.replace(/"global","id":"\d+"/g, '')
 			assert.strictEqual(got, expected, 'Expected the second message to have the same results as the slicer')
 		}))
 

@@ -19,12 +19,12 @@ import { getUniqueCombinationsOfSize } from '../../util/arrays'
 export interface SlicingCriteriaFilter extends MergeableRecord {
 	/**
    * Inclusive minimum size of the slicing criteria (number of included slice points).
-   * Should be at least `1` to make sense (and of course at most {@link SlicingCriteriaFilter#maximumSize | maximum size}).
+   * Should be at least `1` to make sense (and of course at most {@link SlicingCriteriaFilter#maximumSize|maximum size}).
    */
 	minimumSize: number
 	/**
    * Inclusive maximum size of the slicing criteria (number of included slice points).
-   * Should be at least `1` to make sense (and of course at least {@link SlicingCriteriaFilter#minimumSize | minimum size}).
+   * Should be at least `1` to make sense (and of course at least {@link SlicingCriteriaFilter#minimumSize|minimum size}).
    * <p>
    * Be really careful with this one, as the number of possible slicing criteria can grow exponentially with the maximum size.
    */

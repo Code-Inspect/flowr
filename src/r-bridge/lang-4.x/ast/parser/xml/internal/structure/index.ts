@@ -1,3 +1,4 @@
-export * from './root'
-export * from './elements'
-export * from './single-element'
+export * from './normalize-root'
+export * from './normalize-expressions'
+export * from './normalize-single-node'
+export { normalizeDelimiter } from './normalize-delimiter'

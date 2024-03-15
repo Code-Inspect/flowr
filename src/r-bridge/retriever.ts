@@ -1,16 +1,17 @@
 import { type RShell } from './shell'
-import type { XmlParserHooks, NormalizedAst } from './lang-4.x'
+import type { NormalizedAst } from './lang-4.x'
 import { ts2r } from './lang-4.x'
 import { startAndEndsWith } from '../util/strings'
-import type { AsyncOrSync, DeepPartial } from 'ts-essentials'
+import type { AsyncOrSync } from 'ts-essentials'
 import { guard } from '../util/assert'
 import { RShellExecutor } from './shell-executor'
 import objectHash from 'object-hash'
 import { normalize } from './lang-4.x/ast/parser/json/parser'
+import { ErrorMarker } from './init'
 
 export interface RParseRequestFromFile {
 	readonly request:  'file';
-	/** The path to the file (absolute paths are probably best here */
+	/** The path to the file (absolute paths are probably best here) */
 	readonly  content: string;
 }
 
@@ -72,8 +73,6 @@ export function requestFingerprint(request: RParseRequest): string {
 	return objectHash(request)
 }
 
-const ErrorMarker = 'err'
-
 /**
  * Provides the capability to parse R files/R code using the R parser.
  * Depends on {@link RShell} to provide a connection to R.
@@ -82,25 +81,12 @@ const ErrorMarker = 'err'
  * If successful, allows to further query the last result with {@link retrieveNumberOfRTokensOfLastParse}.
  */
 export function retrieveParseDataFromRCode(request: RParseRequest, shell: (RShell | RShellExecutor)): AsyncOrSync<string> {
+	if(request.content.trim() === '') {
+		return Promise.resolve('')
+	}
 	const suffix = request.request === 'file' ? ', encoding="utf-8"' : ''
-	const eol = ts2r(shell.options.eol)
-	const command =
-		/* first check if flowr_get is already part of the environment */
-		'if(!exists("flowr_get")){'
-		/* if not, define it complete wrapped in a try so that we can handle failures gracefully on stdout */
-	+ 'flowr_get<-function(...){tryCatch({'
-		/* the actual code to parse the R code, ... allows us to keep the old 'file=path' and 'text=content' semantics. we define flowr_output using the super assignment to persist it in the env! */
-	+ 'flowr_output<<-utils::getParseData(parse(...,keep.source=TRUE),includeText=TRUE);'
-		/* json conversion of the output, dataframe="values" allows us to receive a list of lists (which is more compact)!
-		 * so we do not depend on jsonlite and friends, we do so manually (:sparkles:)
-		 */
-	+ `cat("[",paste0(apply(flowr_output,1,function(o)sprintf("[%s,%s,%s,%s,%s,%s,%s,%s,%s]",o[[1]],o[[2]],o[[3]],o[[4]],o[[5]],o[[6]],deparse(o[[7]]),if(o[[8]])"true"else"false",deparse(o[[9]]))),collapse=","),"]",${eol},sep="")`
-		/* error handling (just produce the marker) */
-	+ `},error=function(e){cat("${ErrorMarker}",${eol})})};`
-		/* compile the function to improve perf. */
-	+ 'flowr_get<-compiler::cmpfun(flowr_get)};'
-		/* call the function with the request */
-	+ `flowr_get(${request.request}=${JSON.stringify(request.content)}${suffix})`
+	/* call the function with the request */
+	const command =`flowr_get_ast(${request.request}=${JSON.stringify(request.content)}${suffix})`
 
 	if(shell instanceof RShellExecutor) {
 		return guardRetrievedOutput(shell.run(command), request)
@@ -115,9 +101,9 @@ export function retrieveParseDataFromRCode(request: RParseRequest, shell: (RShel
  * Uses {@link retrieveParseDataFromRCode} and returns the nicely formatted object-AST.
  * If successful, allows to further query the last result with {@link retrieveNumberOfRTokensOfLastParse}.
  */
-export async function retrieveNormalizedAstFromRCode(request: RParseRequest, shell: RShell, hooks?: DeepPartial<XmlParserHooks>): Promise<NormalizedAst> {
+export async function retrieveNormalizedAstFromRCode(request: RParseRequest, shell: RShell): Promise<NormalizedAst> {
 	const data = await retrieveParseDataFromRCode(request, shell)
-	return normalize(data, hooks)
+	return normalize(data)
 }
 
 /**

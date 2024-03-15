@@ -279,7 +279,6 @@ function serializeObject(obj: DataForQuad | undefined | null, quads: Quad[], con
 	} else if(obj instanceof Set) {
 		let i = 0
 		for(const value of obj.values()) {
-			console.log('set', value)
 			processObjectEntry('idx-'+String(i++), value, obj, quads, config)
 		}
 	} else {

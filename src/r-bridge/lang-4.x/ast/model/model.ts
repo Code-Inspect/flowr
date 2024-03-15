@@ -1,7 +1,7 @@
 import type { SourceRange } from '../../../../util/range'
 import type { RType } from './type'
 import type { MergeableRecord } from '../../../../util/objects'
-import type { RNa, RNull } from '../../values'
+import type { RNa, RNull } from '../../convert-values'
 import type {
 	RExpressionList,
 	RNumber,
@@ -58,7 +58,7 @@ interface Source {
 }
 
 /**
- * Provides the common base of all {@link RNode | RNodes}.
+ * Provides the common base of all {@link RNode|RNodes}.
  *
  * @typeParam Info       - can be used to store additional information about the node
  * @typeParam LexemeType - the type of the lexeme, probably always a `string` or `string | undefined`
@@ -72,7 +72,7 @@ export interface Base<Info, LexemeType = string> extends MergeableRecord {
 }
 
 export interface WithChildren<Info, Children extends Base<Info, string | undefined>> {
-	children: Children[]
+	children: readonly Children[]
 }
 
 /**

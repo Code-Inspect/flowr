@@ -18,7 +18,8 @@ Although far from being as detailed as the in-depth explanation of [*flowR*](htt
   - [Interfacing With the File System](#interfacing-with-the-file-system)
 - [⚒️ Writing Code](#️-writing-code)
   - [Interfacing With R by Using The `RShell`](#interfacing-with-r-by-using-the-rshell)
-  - [Slicing With The `SteppingSlicer`](#slicing-with-the-steppingslicer)
+  - [The Pipeline Executor](#the-pipeline-executor)
+  - [(Deprecated) Slicing With The `SteppingSlicer`](#deprecated-slicing-with-the-steppingslicer)
     - [Understanding the Steps](#understanding-the-steps)
     - [Benchmark the Slicer With The `BenchmarkSlicer`](#benchmark-the-slicer-with-the-benchmarkslicer)
   - [Augmenting the Normalization](#augmenting-the-normalization)
@@ -957,15 +958,41 @@ With a shell object (let's call it `shell`), you can execute R code by using `RS
 
 Besides that, the command `RShell::tryToInjectHomeLibPath` may be of interest, as it enables all libraries available on the host system.
 
-### Slicing With The `SteppingSlicer`
+### The Pipeline Executor
+
+Once, in the beginning, *flowR* was meant to produce a dataflow graph merely to provide *program slices*. However, with continuous extensions the dataflow graph repeatedly proofs to be the interesting part.
+With this, we restructured *flowR*'s *hardcoded* pipeline to be
+far more flexible. Now, it can be theoretically extended or replaced with arbitrary steps, optional steps, and, what we call 'decorations' of these steps. In short, if you still "just want to slice", you can do it like this:
+
+```typescript
+const slicer = new PipelineExecutor(DEFAULT_SLICING_PIPELINE, {
+  shell:     new RShell(),
+  request:   requestFromInput('x <- 1\nx + 1'),
+  criterion: ['2@x']
+})
+const slice = await slicer.allRemainingSteps()
+// console.log(slice.reconstruct.code)
+```
+
+If you compare this, with what you would have done with the [old `SteppingSlicer`](#deprecated-slicing-with-the-steppingslicer) this essentially just requires you to replace the `SteppingSlicer` with the `PipelineExecutor` and to pass the `DEFAULT_SLICING_PIPELINE` as the first argument.
+Similarly, the new `PipelineExecutor`...
+
+1. allows to investigate the results of all intermediate steps
+2. can be executed step-by-step
+3. can repeat steps (e.g., to calculate multiple slices on the same input)
+
+See the [documentation](https://code-inspect.github.io/flowr/doc/classes/src_core_pipeline-executor.PipelineExecutor.html) for more information.
+
+### (Deprecated) Slicing With The `SteppingSlicer`
+
+> 💡 Information\
+> Please note, that the `SteppingSlicer` has been deprecated with the *Dataflow v2* update, in favor of a far more general `PipelineExecutor` (which now backs the `SteppingSlicer` using a custom legacy-`Pipeline` to ensure that it behaves similar).
 
 The main class that represents *flowR*'s slicing is the [`SteppingSlicer`](https://code-inspect.github.io/flowr/doc/classes/src_core_slicer.SteppingSlicer.html) class. With *flowR*, this allows you to slice code like this:
 
 ```typescript
-const shell = new RShell()
-
 const stepper = new SteppingSlicer({
-  shell:     shell,
+  shell:     new RShell(),
   request:   requestFromInput('x <- 1\nx + 1'),
   criterion: ['2@x']
 })
@@ -988,13 +1015,13 @@ Besides slicing, the stepping slicer:
 2. can be executed step-by-step
 3. can be told to stop after a given step
 
-See the [documentation](https://code-inspect.github.io/flowr/doc/classes/src_core_slicer.SteppingSlicer.html) for more.
+See the [documentation](https://code-inspect.github.io/flowr/doc/classes/src_core_stepping-slicer.SteppingSlicer.html) for more.
 
 #### Understanding the Steps
 
 The definition of all steps happens in [src/core/steps.ts](https://github.com/Code-Inspect/flowr/blob/main/src/core/steps.ts).
 Investigating the file provides you an overview of the slicing phases, as well as the functions that are called to perform the respective step.
-The [`SteppingSlicer`](https://github.com/Code-Inspect/flowr/blob/main/src/core/slicer.ts) simply glues them together and passes the results of one step to the next.
+The [`SteppingSlicer`](https://github.com/Code-Inspect/flowr/blob/main/src/core/stepping-slicer.ts) simply glues them together and passes the results of one step to the next.
 If you are interested in the type magic associated with the stepping slicers output type, refer to [src/core/output.ts](https://github.com/Code-Inspect/flowr/blob/main/src/core/output.ts).
 
 If you add a new step, make sure to modify all of these locations accordingly.

@@ -1,14 +1,13 @@
 import { assertAst, withShell } from '../../../_helper/shell'
 import { exprList, numVal, parameter } from '../../../_helper/ast-builder'
 import { rangeFrom } from '../../../../../src/util/range'
-import { RType } from '../../../../../src/r-bridge'
-import { ensureExpressionList } from '../../../../../src/r-bridge/lang-4.x/ast/parser/xml/internal'
+import { RType } from '../../../../../src'
+import { label } from '../../../_helper/label'
 
-describe('Parse function definitions', withShell((shell) => {
+describe('Parse function definitions', withShell(shell => {
 	describe('without parameters', () => {
-		const noop = 'function() { }'
-		assertAst(`noop - ${noop}`, shell, noop,
-			exprList({
+		assertAst(label('Noop', ['normal-definition', 'grouping']),
+			shell, 'function() { }', exprList({
 				type:       RType.FunctionDefinition,
 				location:   rangeFrom(1, 1, 1, 8),
 				lexeme:     'function',
@@ -16,8 +15,23 @@ describe('Parse function definitions', withShell((shell) => {
 				info:       {},
 				body:       {
 					type:     RType.ExpressionList,
-					location: rangeFrom(1, 12, 1, 14),
-					lexeme:   '{ }',
+					grouping: [{
+						type:      RType.Symbol,
+						location:  rangeFrom(1, 12, 1, 12),
+						lexeme:    '{',
+						content:   '{',
+						info:      {},
+						namespace: undefined
+					}, {
+						type:      RType.Symbol,
+						location:  rangeFrom(1, 14, 1, 14),
+						lexeme:    '}',
+						content:   '}',
+						info:      {},
+						namespace: undefined
+					}],
+					location: undefined,
+					lexeme:   undefined,
 					children: [],
 					info:     {}
 				}
@@ -25,61 +39,78 @@ describe('Parse function definitions', withShell((shell) => {
 				ignoreAdditionalTokens: true
 			}
 		)
-		const noArgs = 'function() { x + 2 * 3 }'
-		assertAst(`noArgs - ${noArgs}`, shell, noArgs,
-			exprList({
+		assertAst(label('No Args', ['normal-definition', 'name-normal', 'binary-operator', 'infix-calls', 'function-calls', 'numbers', 'grouping']),
+			shell, 'function() { x + 2 * 3 }',exprList({
 				type:       RType.FunctionDefinition,
 				location:   rangeFrom(1, 1, 1, 8),
 				lexeme:     'function',
 				parameters: [],
 				info:       {},
-				body:       ensureExpressionList({
-					type:     RType.BinaryOp,
-					location: rangeFrom(1, 16, 1, 16),
-					flavor:   'arithmetic',
-					lexeme:   '+',
-					operator: '+',
+				body:       {
+					type:     RType.ExpressionList,
+					location: undefined,
+					lexeme:   undefined,
 					info:     {},
-					lhs:      {
+					grouping: [{
 						type:      RType.Symbol,
-						location:  rangeFrom(1, 14, 1, 14),
-						lexeme:    'x',
-						content:   'x',
-						namespace: undefined,
-						info:      {}
-					},
-					rhs: {
+						location:  rangeFrom(1, 12, 1, 12),
+						lexeme:    '{',
+						content:   '{',
+						info:      {},
+						namespace: undefined
+					}, {
+						type:      RType.Symbol,
+						location:  rangeFrom(1, 24, 1, 24),
+						lexeme:    '}',
+						content:   '}',
+						info:      {},
+						namespace: undefined
+					}],
+					children: [{
 						type:     RType.BinaryOp,
-						location: rangeFrom(1, 20, 1, 20),
-						flavor:   'arithmetic',
-						lexeme:   '*',
-						operator: '*',
+						location: rangeFrom(1, 16, 1, 16),
+						lexeme:   '+',
+						operator: '+',
 						info:     {},
 						lhs:      {
-							type:     RType.Number,
-							location: rangeFrom(1, 18, 1, 18),
-							lexeme:   '2',
-							content:  numVal(2),
-							info:     {}
+							type:      RType.Symbol,
+							location:  rangeFrom(1, 14, 1, 14),
+							lexeme:    'x',
+							content:   'x',
+							namespace: undefined,
+							info:      {}
 						},
 						rhs: {
-							type:     RType.Number,
-							location: rangeFrom(1, 22, 1, 22),
-							lexeme:   '3',
-							content:  numVal(3),
-							info:     {}
+							type:     RType.BinaryOp,
+							location: rangeFrom(1, 20, 1, 20),
+							lexeme:   '*',
+							operator: '*',
+							info:     {},
+							lhs:      {
+								type:     RType.Number,
+								location: rangeFrom(1, 18, 1, 18),
+								lexeme:   '2',
+								content:  numVal(2),
+								info:     {}
+							},
+							rhs: {
+								type:     RType.Number,
+								location: rangeFrom(1, 22, 1, 22),
+								lexeme:   '3',
+								content:  numVal(3),
+								info:     {}
+							}
 						}
-					}
-				})
+					}]
+				}
 			}), {
 				ignoreAdditionalTokens: true
 			}
 		)
 	})
 	describe('with unnamed parameters', () => {
-		const oneParameter = 'function(x) { }'
-		assertAst(`one parameter - ${oneParameter}`, shell, oneParameter,
-			exprList({
+		assertAst(label('One parameter', ['normal-definition', 'formals-named', 'grouping']),
+			shell, 'function(x) { }', exprList({
 				type:       RType.FunctionDefinition,
 				location:   rangeFrom(1, 1, 1, 8),
 				lexeme:     'function',
@@ -87,8 +118,23 @@ describe('Parse function definitions', withShell((shell) => {
 				info:       {},
 				body:       {
 					type:     RType.ExpressionList,
-					location: rangeFrom(1, 13, 1, 15),
-					lexeme:   '{ }',
+					grouping: [{
+						type:      RType.Symbol,
+						location:  rangeFrom(1, 13, 1, 13),
+						lexeme:    '{',
+						content:   '{',
+						info:      {},
+						namespace: undefined
+					}, {
+						type:      RType.Symbol,
+						location:  rangeFrom(1, 15, 1, 15),
+						lexeme:    '}',
+						content:   '}',
+						info:      {},
+						namespace: undefined
+					}],
+					location: undefined,
+					lexeme:   undefined,
 					children: [],
 					info:     {}
 				}
@@ -96,9 +142,8 @@ describe('Parse function definitions', withShell((shell) => {
 				ignoreAdditionalTokens: true
 			}
 		)
-		const multipleParameters = 'function(a,the,b) { b }'
-		assertAst(`multiple parameters - ${multipleParameters}`, shell, multipleParameters,
-			exprList({
+		assertAst(label('Multiple parameters', ['normal-definition', 'name-normal', 'formals-named', 'grouping']),
+			shell, 'function(a,the,b) { b }', exprList({
 				type:       RType.FunctionDefinition,
 				location:   rangeFrom(1, 1, 1, 8),
 				lexeme:     'function',
@@ -108,43 +153,77 @@ describe('Parse function definitions', withShell((shell) => {
 					parameter('b', rangeFrom(1, 16, 1, 16))
 				],
 				info: {},
-				body: ensureExpressionList({
-					type:      RType.Symbol,
-					location:  rangeFrom(1, 21, 1, 21),
-					lexeme:    'b',
-					content:   'b',
-					namespace: undefined,
-					info:      {}
-				})
+				body: {
+					type:     RType.ExpressionList,
+					location: undefined,
+					lexeme:   undefined,
+					info:     {},
+					grouping: [{
+						type:      RType.Symbol,
+						location:  rangeFrom(1, 19, 1, 19),
+						lexeme:    '{',
+						content:   '{',
+						info:      {},
+						namespace: undefined
+					}, {
+						type:      RType.Symbol,
+						location:  rangeFrom(1, 23, 1, 23),
+						lexeme:    '}',
+						content:   '}',
+						info:      {},
+						namespace: undefined
+					}],
+					children: [{
+						type:      RType.Symbol,
+						location:  rangeFrom(1, 21, 1, 21),
+						lexeme:    'b',
+						content:   'b',
+						namespace: undefined,
+						info:      {}
+					}]
+				}
 			}), {
 				ignoreAdditionalTokens: true
 			}
 		)
 	})
-	describe('with special parameters (...)', () => {
-		const asSingleParameter = 'function(...) { }'
-		assertAst(`as single arg - ${asSingleParameter}`, shell, asSingleParameter,
-			exprList({
+	describe('With Special Parameters (...)', () => {
+		assertAst(label('As Single Argument', ['normal-definition', 'formals-dot-dot-dot', 'grouping']),
+			shell, 'function(...) { }', exprList({
 				type:       RType.FunctionDefinition,
 				location:   rangeFrom(1, 1, 1, 8),
 				lexeme:     'function',
 				parameters: [parameter('...', rangeFrom(1, 10, 1, 12), undefined, true)],
 				info:       {},
-				body:       ensureExpressionList({
+				body:       {
 					type:     RType.ExpressionList,
-					location: rangeFrom(1, 15, 1, 17),
-					lexeme:   '{ }',
+					grouping: [{
+						type:      RType.Symbol,
+						location:  rangeFrom(1, 15, 1, 15),
+						lexeme:    '{',
+						content:   '{',
+						info:      {},
+						namespace: undefined
+					}, {
+						type:      RType.Symbol,
+						location:  rangeFrom(1, 17, 1, 17),
+						lexeme:    '}',
+						content:   '}',
+						info:      {},
+						namespace: undefined
+					}],
+					location: undefined,
+					lexeme:   undefined,
 					children: [],
 					info:     {}
-				})
+				}
 			}), {
 				ignoreAdditionalTokens: true
 			}
 		)
 
-		const asFirstParameters = 'function(..., a) { }'
-		assertAst(`as first arg - ${asFirstParameters}`, shell, asFirstParameters,
-			exprList({
+		assertAst(label('As first arg', ['normal-definition', 'formals-dot-dot-dot', 'grouping', 'formals-named']),
+			shell, 'function(..., a) { }', exprList({
 				type:       RType.FunctionDefinition,
 				location:   rangeFrom(1, 1, 1, 8),
 				lexeme:     'function',
@@ -155,8 +234,23 @@ describe('Parse function definitions', withShell((shell) => {
 				info: {},
 				body: {
 					type:     RType.ExpressionList,
-					location: rangeFrom(1, 18, 1, 20),
-					lexeme:   '{ }',
+					location: undefined,
+					grouping: [{
+						type:      RType.Symbol,
+						location:  rangeFrom(1, 18, 1, 18),
+						lexeme:    '{',
+						content:   '{',
+						info:      {},
+						namespace: undefined
+					}, {
+						type:      RType.Symbol,
+						location:  rangeFrom(1, 20, 1, 20),
+						lexeme:    '}',
+						content:   '}',
+						info:      {},
+						namespace: undefined
+					}],
+					lexeme:   undefined,
 					children: [],
 					info:     {}
 				}
@@ -165,9 +259,8 @@ describe('Parse function definitions', withShell((shell) => {
 			}
 		)
 
-		const asLastParameter = 'function(a, the, ...) { ... }'
-		assertAst(`as last arg - ${asLastParameter}`, shell, asLastParameter,
-			exprList({
+		assertAst(label('As last arg', ['normal-definition', 'formals-dot-dot-dot', 'grouping', 'formals-named', 'name-normal']),
+			shell, 'function(a, the, ...) { ... }', exprList({
 				type:       RType.FunctionDefinition,
 				location:   rangeFrom(1, 1, 1, 8),
 				lexeme:     'function',
@@ -177,23 +270,43 @@ describe('Parse function definitions', withShell((shell) => {
 					parameter('...', rangeFrom(1, 18, 1, 20), undefined, true)
 				],
 				info: {},
-				body: ensureExpressionList({
-					type:      RType.Symbol,
-					location:  rangeFrom(1, 25, 1, 27),
-					lexeme:    '...',
-					content:   '...',
-					namespace: undefined,
-					info:      {}
-				})
+				body: {
+					type:     RType.ExpressionList,
+					location: undefined,
+					lexeme:   undefined,
+					info:     {},
+					grouping: [{
+						type:      RType.Symbol,
+						location:  rangeFrom(1, 23, 1, 23),
+						lexeme:    '{',
+						content:   '{',
+						info:      {},
+						namespace: undefined
+					}, {
+						type:      RType.Symbol,
+						location:  rangeFrom(1, 29, 1, 29),
+						lexeme:    '}',
+						content:   '}',
+						info:      {},
+						namespace: undefined
+					}],
+					children: [{
+						type:      RType.Symbol,
+						location:  rangeFrom(1, 25, 1, 27),
+						lexeme:    '...',
+						content:   '...',
+						namespace: undefined,
+						info:      {}
+					}]
+				}
 			}), {
 				ignoreAdditionalTokens: true
 			}
 		)
 	})
-	describe('with named parameters', () => {
-		const oneParameter = 'function(x=3) { }'
-		assertAst(`one parameter - ${oneParameter}`, shell, oneParameter,
-			exprList({
+	describe('With Named Parameters', () => {
+		assertAst(label('One Parameter', ['normal-definition', 'formals-named', 'formals-default', 'grouping', 'name-normal', 'numbers']),
+			shell, 'function(x=3) { }', exprList({
 				type:       RType.FunctionDefinition,
 				location:   rangeFrom(1, 1, 1, 8),
 				lexeme:     'function',
@@ -209,8 +322,23 @@ describe('Parse function definitions', withShell((shell) => {
 				info: {},
 				body: {
 					type:     RType.ExpressionList,
-					location: rangeFrom(1, 15, 1, 17),
-					lexeme:   '{ }',
+					grouping: [{
+						type:      RType.Symbol,
+						location:  rangeFrom(1, 15, 1, 15),
+						lexeme:    '{',
+						content:   '{',
+						info:      {},
+						namespace: undefined
+					}, {
+						type:      RType.Symbol,
+						location:  rangeFrom(1, 17, 1, 17),
+						lexeme:    '}',
+						content:   '}',
+						info:      {},
+						namespace: undefined
+					}],
+					location: undefined,
+					lexeme:   undefined,
 					children: [],
 					info:     {}
 				}
@@ -219,9 +347,8 @@ describe('Parse function definitions', withShell((shell) => {
 			}
 		)
 
-		const multipleParameters = 'function(a, x=3, huhu="hehe") { x }'
-		assertAst(`multiple parameter - ${multipleParameters}`, shell, multipleParameters,
-			exprList({
+		assertAst(label('Multiple Parameter', ['normal-definition', 'formals-named', 'formals-default', 'grouping', 'name-normal', 'numbers', 'name-normal', 'strings']),
+			shell, 'function(a, x=3, huhu="hehe") { x }', exprList({
 				type:       RType.FunctionDefinition,
 				location:   rangeFrom(1, 1, 1, 8),
 				lexeme:     'function',
@@ -243,14 +370,35 @@ describe('Parse function definitions', withShell((shell) => {
 					})
 				],
 				info: {},
-				body: ensureExpressionList({
-					type:      RType.Symbol,
-					location:  rangeFrom(1, 33, 1, 33),
-					lexeme:    'x',
-					content:   'x',
-					namespace: undefined,
-					info:      {}
-				})
+				body: {
+					type:     RType.ExpressionList,
+					lexeme:   undefined,
+					location: undefined,
+					info:     {},
+					grouping: [{
+						type:      RType.Symbol,
+						location:  rangeFrom(1, 31, 1, 31),
+						lexeme:    '{',
+						content:   '{',
+						info:      {},
+						namespace: undefined
+					}, {
+						type:      RType.Symbol,
+						location:  rangeFrom(1, 35, 1, 35),
+						lexeme:    '}',
+						content:   '}',
+						info:      {},
+						namespace: undefined
+					}],
+					children: [{
+						type:      RType.Symbol,
+						location:  rangeFrom(1, 33, 1, 33),
+						lexeme:    'x',
+						content:   'x',
+						namespace: undefined,
+						info:      {}
+					}]
+				}
 			}), {
 				ignoreAdditionalTokens: true
 			}

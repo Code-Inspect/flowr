@@ -1,3 +1,3 @@
-export * from './number'
-export * from './string'
-export * from './symbol'
+export * from './normalize-number'
+export * from './normalize-string'
+export * from './normalize-symbol'

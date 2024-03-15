@@ -1,5 +1,3 @@
-import type { StepResults } from '../../../core'
-import { LAST_STEP, printStepResult, SteppingSlicer, STEPS_PER_SLICE } from '../../../core'
 import type { NormalizedAst, RShell } from '../../../r-bridge'
 import { sendMessage } from './send'
 import { answerForValidationError, validateBaseMessageFormat, validateMessage } from './validate'
@@ -27,10 +25,16 @@ import { ansiFormatter, voidFormatter } from '../../../statistics'
 import { LogLevel } from '../../../util/log'
 import type { ControlFlowInformation } from '../../../util/cfg/cfg'
 import { cfg2quads, extractCFG } from '../../../util/cfg/cfg'
-import { StepOutputFormat } from '../../../core/print/print'
-import type { DataflowInformation } from '../../../dataflow/internal/info'
+import { printStepResult, StepOutputFormat } from '../../../core/print/print'
+import type { DataflowInformation } from '../../../dataflow/info'
 import type { QuadSerializationConfiguration } from '../../../util/quads'
 import { defaultQuadIdGenerator } from '../../../util/quads'
+import { PARSE_WITH_R_SHELL_STEP } from '../../../core/steps/all/core/00-parse'
+import { NORMALIZE } from '../../../core/steps/all/core/10-normalize'
+import { STATIC_DATAFLOW } from '../../../core/steps/all/core/20-dataflow'
+import { SteppingSlicer } from '../../../core/stepping-slicer'
+import type { StepResults } from '../../../core/steps/output'
+import { LAST_STEP, STEPS_PER_SLICE } from '../../../core/steps/steps'
 
 /**
  * Each connection handles a single client, answering to its requests.
@@ -66,7 +70,7 @@ export class FlowRServerConnection {
 			return
 		}
 		message = this.currentMessageBuffer + message
-		if(this.logger.settings.minLevel >= LogLevel.Debug) {
+		if(this.logger.settings.minLevel <= LogLevel.Debug) {
 			this.logger.debug(`[${this.name}] Received message: ${message}`)
 		}
 
@@ -138,9 +142,9 @@ export class FlowRServerConnection {
 				id:      message.id,
 				cfg:     cfg ? cfg2quads(cfg, config()) : undefined,
 				results: {
-					parse:     await printStepResult('parse', results.parse as string, StepOutputFormat.RdfQuads, config()),
-					normalize: await printStepResult('normalize', results.normalize as NormalizedAst, StepOutputFormat.RdfQuads, config()),
-					dataflow:  await printStepResult('dataflow', results.dataflow as DataflowInformation, StepOutputFormat.RdfQuads, config())
+					parse:     await printStepResult(PARSE_WITH_R_SHELL_STEP, results.parse as string, StepOutputFormat.RdfQuads, config()),
+					normalize: await printStepResult(NORMALIZE, results.normalize as NormalizedAst, StepOutputFormat.RdfQuads, config()),
+					dataflow:  await printStepResult(STATIC_DATAFLOW, results.dataflow as DataflowInformation, StepOutputFormat.RdfQuads, config())
 				}
 			})
 		} else {
@@ -189,7 +193,9 @@ export class FlowRServerConnection {
 		}
 
 		const request = requestResult.message
-		this.logger.info(`[${request.filetoken}] Received slice request with criteria ${JSON.stringify(request.criterion)}`)
+		if(this.logger.settings.minLevel <= LogLevel.Info) {
+			this.logger.info(`[${request.filetoken}] Received slice request with criteria ${JSON.stringify(request.criterion)}`)
+		}
 
 		const fileInformation = this.fileMap.get(request.filetoken)
 		if(!fileInformation) {

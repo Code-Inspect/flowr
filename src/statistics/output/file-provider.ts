@@ -1,7 +1,7 @@
 import path from 'path'
 import fs from 'fs'
 import { guard } from '../../util/assert'
-import { log, LogLevel } from '../../util/log'
+import { expensiveTrace, log } from '../../util/log'
 
 type FileDescriptor = number
 export type AppendFnType = string | number | symbol
@@ -25,9 +25,8 @@ export class DummyAppendProvider implements StatisticAppendProvider {
 	}
 
 	append(name: string, fn: AppendFnType, content: string): void {
-		if(log.settings.minLevel >= LogLevel.Trace) {
-			log.trace(`DummyAppendProvider: ${name} ${String(fn)} ${content}`)
-		}
+		expensiveTrace(log, () => `DummyAppendProvider: ${name} ${String(fn)} ${content}`)
+
 		if(this.map) {
 			const fnMap = this.map.get(name)
 			const contentArr = content.split('\n')

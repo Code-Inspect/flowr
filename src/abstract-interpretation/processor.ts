@@ -1,4 +1,4 @@
-import type { DataflowInformation } from '../dataflow/internal/info'
+import type { DataflowInformation } from '../dataflow/info'
 import type { NodeId, NormalizedAst, ParentInformation, RNodeWithParent } from '../r-bridge'
 import { RType } from '../r-bridge'
 import { CfgVertexType, extractCFG } from '../util/cfg/cfg'
@@ -23,13 +23,13 @@ class Stack<ElementType> {
 	private backingStore: ElementType[] = []
 
 	size(): number {
-		return this.backingStore.length 
+		return this.backingStore.length
 	}
 	peek(): ElementType | undefined {
-		return this.backingStore[this.size() - 1] 
+		return this.backingStore[this.size() - 1]
 	}
 	pop(): ElementType | undefined {
-		return this.backingStore.pop() 
+		return this.backingStore.pop()
 	}
 	push(item: ElementType): ElementType {
 		this.backingStore.push(item)

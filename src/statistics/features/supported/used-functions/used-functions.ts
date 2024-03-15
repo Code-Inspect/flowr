@@ -1,8 +1,8 @@
 import type { Feature, FeatureProcessorInput } from '../../feature'
 import { appendStatisticsFile } from '../../../output'
 import type { Writable } from 'ts-essentials'
-import type { RNodeWithParent } from '../../../../r-bridge'
-import { RType, visitAst } from '../../../../r-bridge'
+import type { ParentInformation, RFunctionArgument, RNodeWithParent } from '../../../../r-bridge'
+import { RType, visitAst , EmptyArgument } from '../../../../r-bridge'
 import { EdgeType } from '../../../../dataflow'
 import type {
 	CommonSyntaxTypeCounts } from '../../common-syntax-probability'
@@ -11,6 +11,7 @@ import {
 	updateCommonSyntaxTypeCounts
 } from '../../common-syntax-probability'
 import { postProcess } from './post-process'
+import { getRangeStart } from '../../../../util/range'
 
 const initialFunctionUsageInfo = {
 	allFunctionCalls: 0,
@@ -44,7 +45,7 @@ export const usedFunctions: Feature<FunctionUsageInfo> = {
 }
 
 
-function classifyArguments(args: (RNodeWithParent | undefined)[], existing: Record<number, bigint | CommonSyntaxTypeCounts>) {
+function classifyArguments<OtherInfo>(args: readonly RFunctionArgument<OtherInfo & ParentInformation>[], existing: Record<number, bigint | CommonSyntaxTypeCounts>) {
 	if(args.length === 0) {
 		(existing[0] as unknown as number)++
 		return
@@ -52,7 +53,7 @@ function classifyArguments(args: (RNodeWithParent | undefined)[], existing: Reco
 
 	let i = 1
 	for(const arg of args) {
-		if(arg === undefined) {
+		if(arg === EmptyArgument) {
 			(existing[0] as unknown as number)++
 			continue
 		}
@@ -99,7 +100,7 @@ function visitCalls(info: FunctionUsageInfo, input: FeatureProcessorInput): void
 				appendStatisticsFile(usedFunctions.name, 'unnamed-calls', [node.lexeme], input.filepath)
 				allCalls.push([
 					undefined,
-					[node.location.start.line, node.location.start.column],
+					getRangeStart(node.location),
 					node.arguments.length,
 					'',
 					hasCallsEdge ? 1 : 0
@@ -107,7 +108,7 @@ function visitCalls(info: FunctionUsageInfo, input: FeatureProcessorInput): void
 			} else {
 				allCalls.push([
 					node.functionName.lexeme,
-					[node.location.start.line, node.location.start.column],
+					getRangeStart(node.location),
 					node.arguments.length,
 					node.functionName.namespace ?? '',
 					hasCallsEdge ? 1 : 0

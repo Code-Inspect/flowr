@@ -57,14 +57,14 @@ export const voidFormatter: OutputFormatter = new class implements OutputFormatt
 }()
 
 /**
- * This does not work if the {@link setFormatter | formatter} is void. Tries to format the text with a bold font weight.
+ * This does not work if the {@link setFormatter|formatter} is void. Tries to format the text with a bold font weight.
  */
 export function italic(s: string, f: OutputFormatter = formatter, options?: FormatOptions): string {
 	return f.format(s, { style: FontStyles.Italic, ...options })
 }
 
 /**
- * This does not work if the {@link setFormatter | formatter} is void. Tries to format the text with an italic font shape.
+ * This does not work if the {@link setFormatter|formatter} is void. Tries to format the text with an italic font shape.
  */
 export function bold(s: string, f: OutputFormatter = formatter, options?: FormatOptions): string {
 	return f.format(s, { style: FontStyles.Bold, ...options })

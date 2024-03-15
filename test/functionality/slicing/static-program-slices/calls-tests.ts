@@ -14,7 +14,7 @@ a(i)`
 		assertSliced('Function call with constant function', shell, constFunction, ['3:1'], `i <- 4
 a <- function(x) { 1 }
 a(i)`)
-		assertSliced('Slice function definition', shell, constFunction, ['2@a'], 'a <- function(x) { }')
+		assertSliced('Slice function definition', shell, constFunction, ['2@a'], 'a <- function(x) { 1 }')
 		assertSliced('Slice within function', shell, constFunction, ['2:20'], 'x <- 2')
 		assertSliced('Multiple unknown calls', shell, `
 foo(x, y)
@@ -252,7 +252,7 @@ a[3]
 print(a[2])
     `
 		assertSliced('Must include function shell', shell, code, ['3@a'], `a <- list(1,2,3,4)
-a[3]`)
+a`)
 	})
 	describe('Global vs. local definitions', () => {
 		const localCode = `

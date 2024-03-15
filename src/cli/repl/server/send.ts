@@ -10,7 +10,7 @@ export function getUnnamedSocketName(c: Socket): string {
 
 export function sendMessage<T extends IdMessageBase>(c: Socket, message: T): void {
 	const msg = JSON.stringify(message, jsonReplacer)
-	if(serverLog.settings.minLevel >= LogLevel.Debug) {
+	if(serverLog.settings.minLevel <= LogLevel.Debug) {
 		serverLog.debug(`[${getUnnamedSocketName(c)}] sending message: ${msg}`)
 	}
 	c.write(`${msg}\n`)

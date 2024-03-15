@@ -45,9 +45,9 @@ export function sliceDiffAnsi(slice: Set<NodeId>, normalized: NormalizedAst, cri
 	const lines = originalCode.split('\n')
 
 	for(const { selected, location } of importantLocations) {
-		const { start, end } = location
-		const line = lines[start.line - 1]
-		lines[start.line - 1] = `${line.substring(0, start.column - 1)}${ansiFormatter.reset()}${highlight(line.substring(start.column - 1, end.column), selected)}${grayOut()}${line.substring(end.column)}`
+		const [sl, sc, , ec] = location
+		const line = lines[sl - 1]
+		lines[sl - 1] = `${line.substring(0, sc - 1)}${ansiFormatter.reset()}${highlight(line.substring(sc - 1, ec), selected)}${grayOut()}${line.substring(ec)}`
 	}
 
 	return `${grayOut()}${lines.join('\n')}${ansiFormatter.reset()}`

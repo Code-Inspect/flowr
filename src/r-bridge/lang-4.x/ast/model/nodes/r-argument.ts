@@ -11,3 +11,8 @@ export interface RArgument<Info = NoInfo> extends Base<Info>, Location {
 	name:          RSymbol<Info> | undefined;
 	value:         RNode<Info> | undefined;
 }
+
+export interface RUnnamedArgument<Info = NoInfo> extends RArgument<Info> {
+	name:  undefined;
+	value: RNode<Info>;
+}

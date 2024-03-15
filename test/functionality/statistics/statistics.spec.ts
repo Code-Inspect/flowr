@@ -1,14 +1,15 @@
 import type { AppendFnType,
 	DummyAppendMemoryMap,
 	FeatureKey,
-	FeatureValue } from '../../../src/statistics'
+	FeatureValue ,
+	RShell
+} from '../../../src'
 import {
 	ALL_FEATURES,
 	extractUsageStatistics, initDummyFileProvider,
 	staticRequests
-} from '../../../src/statistics'
+} from '../../../src'
 import { assert } from 'chai'
-import type { RShell } from '../../../src/r-bridge'
 import { deepMergeObject } from '../../../src/util/objects'
 import { jsonReplacer, jsonRetriever } from '../../../src/util/json'
 import type { TestConfiguration } from '../_helper/shell'

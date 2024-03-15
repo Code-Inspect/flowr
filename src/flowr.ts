@@ -5,7 +5,7 @@
  * Otherwise, it will start a REPL that can call these scripts and return their results repeatedly.
  */
 import { log, LogLevel } from './util/log'
-import { RShell } from './r-bridge'
+import { RShell, RShellReviveOptions } from './r-bridge'
 import type { OptionDefinition } from 'command-line-usage'
 import commandLineUsage from 'command-line-usage'
 import commandLineArgs from 'command-line-args'
@@ -91,7 +91,7 @@ setConfigFile(undefined, options['config-file'] ?? defaultConfigFile, true)
 function retrieveShell(): RShell {
 	// we keep an active shell session to allow other parse investigations :)
 	return new RShell({
-		revive:   'always',
+		revive:   RShellReviveOptions.Always,
 		onRevive: (code, signal) => {
 			const signalText = signal == null ? '' : ` and signal ${signal}`
 			console.log(formatter.format(`R process exited with code ${code}${signalText}. Restarting...`, { color: Colors.Magenta, effect: ColorEffect.Foreground }))

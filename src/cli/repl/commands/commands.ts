@@ -90,20 +90,18 @@ for(const [script, { target, description, type }] of Object.entries(scripts)) {
 /**
  * The names of all commands including their aliases (but without the leading `:`)
  */
-export const commandNames: string[] = []
 // maps command names or aliases to the actual command name
 const commandMapping: Record<string, string> = {}
 
-for(const [command, { aliases }] of Object.entries(commands)) {
+export const commandNames: readonly string[] = Object.entries(commands).flatMap(([command, { aliases }]) => {
 	guard(commandMapping[command] as string | undefined === undefined, `Command ${command} is already registered!`)
 	commandMapping[command] = command
 	for(const alias of aliases) {
 		guard(commandMapping[alias] as string | undefined === undefined, `Command (alias) ${alias} is already registered!`)
 		commandMapping[alias] = command
 	}
-	commandNames.push(command)
-	commandNames.push(...aliases)
-}
+	return [command, ...aliases]
+})
 
 /**
  * Get the command for a given command name or alias.

@@ -21,7 +21,7 @@ export interface DifferenceReport {
    */
 	comments(): readonly string[] | undefined
 	/**
-   * @returns true iff the compared structures are equal
+   * @returns true iff the compared structures are equal (i.e., the diff is empty)
    */
 	isEqual(): boolean
 }
@@ -35,19 +35,19 @@ export interface WriteableDifferenceReport extends DifferenceReport {
  * The `leftname` and `rightname` fields are only used to provide more useful
  * information in the difference report.
  */
-export interface GenericDifferenceInformation extends MergeableRecord {
+export interface GenericDifferenceInformation<Report extends WriteableDifferenceReport> extends MergeableRecord {
 	/** A human-readable name for the left structure in `left == right`. */
 	readonly leftname:  string
 	/** A human-readable name for the right structure in `left == right`. */
 	readonly rightname: string
 	/** The report on the difference of the two structures. */
-	readonly report:    WriteableDifferenceReport
+	readonly report:    Report
 	/** A human-readable indication of where we are (the prefix of the information if the structures differ) */
 	readonly position:  string
 }
 
 
-export function setDifference<T>(left: ReadonlySet<T>, right: ReadonlySet<T>, info: GenericDifferenceInformation): void {
+export function setDifference<T, Report extends WriteableDifferenceReport = WriteableDifferenceReport>(left: ReadonlySet<T>, right: ReadonlySet<T>, info: GenericDifferenceInformation<Report>): void {
 	const lWithoutR = setMinus(left, right)
 	const rWithoutL = setMinus(right, left)
 	if(lWithoutR.size === 0 && rWithoutL.size === 0) {

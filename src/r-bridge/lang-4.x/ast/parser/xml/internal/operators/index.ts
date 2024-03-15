@@ -1,3 +1,2 @@
-export * from './unary'
-export * from './binary'
-export * from './special'
+export * from './normalize-unary'
+export * from './normalize-binary'

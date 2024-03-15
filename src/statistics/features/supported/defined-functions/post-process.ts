@@ -218,12 +218,12 @@ function processNextLine(data: FunctionDefinitionSummaryInformation<number[]>[],
 		forFile.returns.implicit.push(returns.length - explicits.length)
 		forFile.returns.onlyExplicit.push(explicits.length === returns.length ? 1 : 0)
 		forFile.returns.onlyImplicit.push(explicits.length === 0 ? 1 : 0)
-		forFile.exitPointsLinePercentageInDef.push(returns.map(r => r.location.line).map(l => l/length.lines))
+		forFile.exitPointsLinePercentageInDef.push(returns.map(r => r.location[0]).map(l => l/length.lines))
 
 		forFile.callsites.push(callsites.length)
 
 		if(stats) {
-			forFile.linePercentageInFile.push(location.line / stats)
+			forFile.linePercentageInFile.push(location[0] / stats)
 		}
 	}
 

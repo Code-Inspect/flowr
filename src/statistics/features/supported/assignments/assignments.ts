@@ -2,8 +2,11 @@ import type { Feature, FeatureProcessorInput } from '../../feature'
 import type { Writable } from 'ts-essentials'
 import { emptyCommonSyntaxTypeCounts, updateCommonSyntaxTypeCounts } from '../../common-syntax-probability'
 import type {
-	RNodeWithParent } from '../../../../r-bridge'
+	RNodeWithParent
+} from '../../../../r-bridge'
 import {
+	OperatorDatabase
+	,
 	RType,
 	visitAst
 } from '../../../../r-bridge'
@@ -27,7 +30,7 @@ function visitAssignment(info: AssignmentInfo, input: FeatureProcessorInput): vo
 
 	visitAst(input.normalizedRAst.ast,
 		node => {
-			if(node.type !== RType.BinaryOp || node.flavor !== 'assignment') {
+			if(node.type !== RType.BinaryOp || OperatorDatabase[node.operator].usedAs !== 'assignment') {
 				return
 			}
 

@@ -1,9 +1,10 @@
 import { retrieveNormalizedAst, withShell } from '../_helper/shell'
-import { decorateAst, requestFromInput, RType } from '../../../src/r-bridge'
+import { decorateAst, requestFromInput, RType } from '../../../src'
 import { defaultQuadIdGenerator, serialize2quads } from '../../../src/util/quads'
 import { assert } from 'chai'
-import { SteppingSlicer } from '../../../src/core'
 import { dataflowGraphToQuads } from '../../../src/core/print/dataflow-printer'
+import { SteppingSlicer } from '../../../src/core/stepping-slicer'
+import { UnnamedArgumentPrefix } from '../../../src/dataflow/internal/process/functions/process-argument'
 
 describe('Quads', withShell(shell => {
 	const context = 'test'
@@ -67,7 +68,7 @@ describe('Quads', withShell(shell => {
 <${idPrefix}2> <${domain}next> <${idPrefix}5> <${context}> .
 <${idPrefix}2> <${domain}tag> "use" <${context}> .
 <${idPrefix}2> <${domain}id> "2" <${context}> .
-<${idPrefix}2> <${domain}name> "unnamed-argument-2" <${context}> .
+<${idPrefix}2> <${domain}name> "${UnnamedArgumentPrefix}2" <${context}> .
 <${idPrefix}2> <${domain}environment> <${idPrefix}6> <${context}> .
 <${idPrefix}6> <${domain}current> <${idPrefix}7> <${context}> .
 <${idPrefix}6> <${domain}level> "0"^^<http://www.w3.org/2001/XMLSchema#integer> <${context}> .
@@ -80,10 +81,8 @@ describe('Quads', withShell(shell => {
 <${idPrefix}8> <${domain}current> <${idPrefix}9> <${context}> .
 <${idPrefix}8> <${domain}level> "0"^^<http://www.w3.org/2001/XMLSchema#integer> <${context}> .
 <${idPrefix}5> <${domain}when> "always" <${context}> .
-<${idPrefix}5> <${domain}scope> "local" <${context}> .
 <${idPrefix}5> <${domain}args> <${idPrefix}10> <${context}> .
-<${idPrefix}10> <${domain}name> "unnamed-argument-2" <${context}> .
-<${idPrefix}10> <${domain}scope> "local" <${context}> .
+<${idPrefix}10> <${domain}name> "${UnnamedArgumentPrefix}2" <${context}> .
 <${idPrefix}10> <${domain}nodeId> "2" <${context}> .
 <${idPrefix}10> <${domain}used> "always" <${context}> .
 <${idPrefix}0> <${domain}edges> <${idPrefix}11> <${context}> .

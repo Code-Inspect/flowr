@@ -1,13 +1,11 @@
 import type { Handler } from '../handler'
 import type { AINode } from '../../processor'
 import { aiLogger } from '../../processor'
-import type { BinaryOperatorFlavor, ParentInformation, RBinaryOp } from '../../../r-bridge'
+import type { ParentInformation, RBinaryOp } from '../../../r-bridge'
 import { guard } from '../../../util/assert'
 import { operators } from './operators'
 
-export type BinOpOperators = {
-	[key in BinaryOperatorFlavor]: (lhs: AINode, rhs: AINode, node: RBinaryOp<ParentInformation>) => AINode
-}
+export type BinaryOpProcessor = (lhs: AINode, rhs: AINode, node: RBinaryOp<ParentInformation>) => AINode
 
 export class BinOp implements Handler<AINode> {
 	lhs: AINode | undefined
@@ -16,7 +14,7 @@ export class BinOp implements Handler<AINode> {
 	constructor(readonly node: RBinaryOp<ParentInformation>) {}
 
 	getName(): string {
-		return `Bin Op (${this.node.flavor})`
+		return `Bin Op (${this.node.operator})`
 	}
 
 	enter(): void {
@@ -27,7 +25,9 @@ export class BinOp implements Handler<AINode> {
 		aiLogger.trace(`Exited ${this.getName()}`)
 		guard(this.lhs !== undefined, `No LHS found for assignment ${this.node.info.id}`)
 		guard(this.rhs !== undefined, `No RHS found for assignment ${this.node.info.id}`)
-		return operators[this.node.flavor](this.lhs, this.rhs, this.node)
+		const processor: BinaryOpProcessor | undefined = operators[this.node.operator]
+		guard(processor !== undefined, `No processor found for binary operator ${this.node.operator}`)
+		return processor(this.lhs, this.rhs, this.node)
 	}
 
 	next(node: AINode): void {
