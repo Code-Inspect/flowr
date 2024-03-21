@@ -1,0 +1,30 @@
+{
+    "name": "@eagleoutice/flowr-benchmark",
+    "version": "0.0.1",
+    "description": "Benchmarking for flowR, a Static Dataflow Analyzer and Program Slicer for the R Programming Language",
+    "types": "dist/src/index.d.ts",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/Code-Inspect/flowr.git"
+    },
+    "homepage": "https://github.com/Code-Inspect/flowr",
+    "bugs": {
+        "url": "https://github.com/Code-Inspect/flowr/issues"
+    },
+    "scripts": {
+        "build": "tsc --project ."
+    },
+    "keywords": [
+        "static code analysis",
+        "R programming language",
+        "R",
+        "programming",
+        "slicing",
+        "dataflow analysis"
+    ],
+    "author": "Florian Sihler",
+    "license": "ISC",
+    "dependencies": {
+        "@eagleoutice/flowr": "file:../src"
+    }
+}

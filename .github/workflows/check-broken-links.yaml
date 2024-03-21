@@ -1,0 +1,41 @@
+name: Check for Broken Links
+
+'on':
+  push:
+    paths:
+      - '**/*.md'
+      - 'wiki/**'
+  pull_request:
+    types: [ opened ]
+    branches: [ main ]
+  workflow_dispatch:
+  schedule:
+    # every monday at night
+    - cron: '0 1 * * 1'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Check the README for broken links
+        uses: becheran/mlc@v0.16.3
+        with:
+          args: README.md
+
+      - name: Publish the Wiki
+        uses: Andrew-Chen-Wang/github-wiki-action@v4
+        # we do not need to republish if nothing changes furthermore, do not publish on PR as this should be done by the push on main!
+        if: ${{ (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')) && !failure() }}
+        with:
+          path: "wiki/"
+          token: ${{ secrets.GH_DEPLOY_WIKI }}
+
+      - name: Check the Wiki pages for broken links
+        uses: becheran/mlc@v0.16.3
+        if: ${{ always() && !failure() }}
+        with:
+          args: wiki/

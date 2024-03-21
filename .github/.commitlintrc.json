@@ -1,0 +1,36 @@
+{
+	"extends": [
+		"@commitlint/config-angular"
+	],
+	"defaultIgnores": true,
+	"helpUrl": "https://github.com/Code-Inspect/flowr/blob/main/.github/CONTRIBUTING.md",
+	"parserPreset": {
+		"parserOpts": {
+			"headerPattern": "^([^\\(\\):]*)(?:\\((.*)\\))?!?: (.*)$"
+		}
+	},
+	"rules": {
+		"subject-min-length": [1, "always", 6],
+		"subject-max-length": [1, "always", 42],
+		"subject-exclamation-mark": [2, "never", "!"],
+		"scope-case": [2, "always", "kebab-case"],
+		"scope-min-length": [1, "always", 3],
+		"scope-empty": [1, "never"],
+		"type-case": [2, "always", "kebab-case"],
+		"type-enum": [2, "always", [
+			"build", "build-fix",
+			"ci", "ci-fix",
+			"doc", "docs", "doc-fix", "docs-fix",
+			"feat", "feat-fix",
+			"perf",
+			"refactor",
+			"test", "tests", "test-fix", "tests-fix",
+			"dep",
+			"lint", "lint-fix",
+			"wip",
+			"meta"
+		]],
+		"type-empty": [2, "never"],
+		"signed-off-by": [2, "never", "Signed-off-by:"]
+	}
+}

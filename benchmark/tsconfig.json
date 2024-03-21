@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "incremental": true,
+    "esModuleInterop": true,
+    "declaration": true,
+    "resolveJsonModule": true,
+    "target": "ESNext",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "outDir": "./dist/",
+    "strict": true
+  },
+  "lib": [ "esnext", "dom" ],
+  "exclude": [
+    "node_modules/**/*",
+    "dist/**/*"
+  ]
+}
