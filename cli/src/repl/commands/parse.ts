@@ -1,21 +1,17 @@
-import type { XmlBasedJson } from '@eagleoutice/flowr/r-bridge'
-import { fileProtocol , removeRQuotes , childrenKey , attributesKey, contentKey , getKeysGuarded, RawRType, requestFromInput } from '@eagleoutice/flowr/r-bridge'
+import { fileProtocol , removeRQuotes , requestFromInput } from '@eagleoutice/flowr/r-bridge'
 import {
 	extractLocation,
 	getTokenType,
-	objectWithArrUnwrap,
-} from '@eagleoutice/flowr/r-bridge/lang-4.x/ast/parser/xml/internal'
+} from '@eagleoutice/flowr/r-bridge/lang-4.x/ast/parser/main/internal'
 import type { OutputFormatter } from '@eagleoutice/flowr/util/ansi'
 import { FontStyles } from '@eagleoutice/flowr/util/ansi'
 import type { ReplCommand } from './main'
 import { SteppingSlicer } from '@eagleoutice/flowr/core'
-import { prepareParsedData } from '@eagleoutice/flowr/r-bridge/lang-4.x/ast/parser/json/format'
-import { convertPreparedParsedData } from '@eagleoutice/flowr/r-bridge/lang-4.x/ast/parser/json/parser'
+import { prepareParsedData , convertPreparedParsedData, type JsonEntry } from '@eagleoutice/flowr/r-bridge/lang-4.x/ast/parser/json/format'
 
-type DepthList =  { depth: number, node: XmlBasedJson, leaf: boolean }[]
+type DepthList = { depth: number, node: JsonEntry, leaf: boolean }[]
 
-function toDepthMap(xml: XmlBasedJson): DepthList {
-	const root = getKeysGuarded<XmlBasedJson>(xml, RawRType.ExpressionList)
+function toDepthMap(root: JsonEntry): DepthList {
 	const visit = [ { depth: 0, node: root } ]
 	const result: DepthList = []
 
@@ -25,7 +21,7 @@ function toDepthMap(xml: XmlBasedJson): DepthList {
 			continue
 		}
 
-		const children = current.node[childrenKey] as XmlBasedJson[] | undefined ?? []
+		const children = current.node.children
 		result.push({ ...current, leaf: children.length === 0 })
 		children.reverse()
 
@@ -70,7 +66,7 @@ function initialIndentation(i: number, depth: number, deadDepths: Set<number>, n
 	return result
 }
 
-function retrieveLocationString(locationRaw: XmlBasedJson) {
+function retrieveLocationString(locationRaw: JsonEntry) {
 	const extracted = extractLocation(locationRaw)
 	if(extracted.start.line === extracted.end.line && extracted.start.column === extracted.end.column) {
 		return ` (${extracted.start.line}:${extracted.start.column})`
@@ -92,13 +88,9 @@ function depthListToTextTree(list: Readonly<DepthList>, f: OutputFormatter): str
 
 		result += f.reset()
 
-		const raw = objectWithArrUnwrap(node)
-		const content = raw[contentKey] as string | undefined
-		const locationRaw = raw[attributesKey] as XmlBasedJson | undefined
+		const content = node.text
 		let location = ''
-		if(locationRaw !== undefined) {
-			location = retrieveLocationString(locationRaw)
-		}
+		location = retrieveLocationString(node)
 
 		const type = getTokenType(node)
 

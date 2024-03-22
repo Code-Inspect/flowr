@@ -3,7 +3,7 @@ import type {
 	NoInfo,
 	RParseRequest,
 	RShell,
-	XmlParserHooks
+	ParserHooks
 } from '../r-bridge'
 import type { LAST_PER_FILE_STEP,
 	StepRequired, STEPS,
@@ -88,7 +88,7 @@ export class SteppingSlicer<InterestedIn extends StepName | undefined = typeof L
 	private readonly shell:          RShell
 	private readonly stepOfInterest: InterestedIn
 	private readonly request:        RParseRequest
-	private readonly hooks?:         DeepPartial<XmlParserHooks>
+	private readonly hooks?:         DeepPartial<ParserHooks>
 	private readonly getId?:         IdGenerator<NoInfo>
 
 	private criterion?: SlicingCriteria

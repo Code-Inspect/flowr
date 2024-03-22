@@ -1059,7 +1059,7 @@ The `after` hook is called after the normalization has created the respective no
 In this example we construct a new feature to extract, with the name "*example*".
 Whenever this name appears, you may substitute this with whatever name fits your feature best (as long as the name is unique).
 
-1. **Create a new file in `src/statistics/features/supported`**\
+1. **Create a new file in `statistics/src/features/supported`**\
    Create the file `example.ts`, and add its export to the `index.ts` file in the same directory (if not done automatically).
 
 2. **Create the basic structure**\
@@ -1096,7 +1096,7 @@ Whenever this name appears, you may substitute this with whatever name fits your
    - a function returning the initial value of the information (in this case, `initialExampleInfo`).
 
 3. **Add it to the feature-mapping**\
-   Now, in the `feature.ts` file in `src/statistics/features`, add your feature to the `ALL_FEATURES` object.
+   Now, in the `feature.ts` file in `statistics/src7features`, add your feature to the `ALL_FEATURES` object.
 
 Now, we want to extract something. For the *example* feature created in the previous steps, we choose to count the amount of `COMMENT` tokens.
 So we define a corresponding [XPath](https://developer.mozilla.org/en-US/docs/Web/XPath) query:

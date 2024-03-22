@@ -1,5 +1,5 @@
 import type { MergeableRecord } from '../util/objects'
-import type { IdGenerator, NoInfo, RParseRequest, RShell, XmlParserHooks } from '../r-bridge'
+import type { IdGenerator, NoInfo, RParseRequest, RShell, ParserHooks } from '../r-bridge'
 import type { DeepPartial } from 'ts-essentials'
 import type { AutoSelectPredicate, SlicingCriteria } from '../slicing'
 import type { STEPS_PER_SLICE, StepName, STEPS_PER_FILE } from './steps'
@@ -20,7 +20,7 @@ interface BaseSteppingSlicerInput<InterestedIn extends StepName | undefined> ext
 	/** The request which essentially indicates the input to extract the AST from */
 	request:         RParseRequest
 	/** These hooks only make sense if you at least want to normalize the parsed R AST. They can augment the normalization process */
-	hooks?:          DeepPartial<XmlParserHooks>
+	hooks?:          DeepPartial<ParserHooks>
 	/** This id generator is only necessary if you want to retrieve a dataflow from the parsed R AST, it determines the id generator to use and by default uses the {@link deterministicCountingIdGenerator}*/
 	getId?:          IdGenerator<NoInfo>
 	/** The slicing criterion is only of interest if you actually want to slice the R code */

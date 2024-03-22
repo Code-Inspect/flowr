@@ -2,7 +2,7 @@ import { assertAst, withShell } from '../../../_helper/shell'
 import { exprList, numVal } from '../../../_helper/ast-builder'
 import { addRanges, rangeFrom } from '../../../../../src/util/range'
 import { RType } from '../../../../../src/r-bridge'
-import { ensureExpressionList } from '../../../../../src/r-bridge/lang-4.x/ast/parser/xml/internal'
+import { ensureExpressionList } from '../../../../../src/r-bridge/lang-4.x/ast/parser/main/internal'
 
 const IfThenSpacingVariants = [
 	{

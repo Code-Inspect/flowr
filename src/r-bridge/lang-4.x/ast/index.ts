@@ -1,3 +1,3 @@
 export * from './model'
-export * from './parser/xml'
+export * from './parser/main'
 export { parseLog } from './parser/json/parser'

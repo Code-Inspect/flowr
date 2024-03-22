@@ -13,7 +13,7 @@ import type {
 	RExpressionList,
 	RNode,
 	RNodeWithParent,
-	XmlParserHooks
+	ParserHooks
 
 } from '../../../src/r-bridge'
 
@@ -81,7 +81,7 @@ function assertAstEqualIgnoreSourceInformation<Info>(ast: RNode<Info>, expected:
 	}
 }
 
-export const retrieveNormalizedAst = async(shell: RShell, input: `${typeof fileProtocol}${string}` | string, hooks?: DeepPartial<XmlParserHooks>): Promise<RNodeWithParent> => {
+export const retrieveNormalizedAst = async(shell: RShell, input: `${typeof fileProtocol}${string}` | string, hooks?: DeepPartial<ParserHooks>): Promise<RNodeWithParent> => {
 	const request = requestFromInput(input)
 	return (await new SteppingSlicer({
 		stepOfInterest: 'normalize',
