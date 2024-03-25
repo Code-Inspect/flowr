@@ -1,9 +1,9 @@
 [submodule "statistics"]
-	path = statistics
+	path = modules/statistics
 	url = https://github.com/Code-Inspect/flowr-statistics
 [submodule "benchmark"]
-	path = benchmark
+	path = modules/benchmark
 	url = https://github.com/Code-Inspect/flowr-benchmark
 [submodule "cli"]
-	path = cli
+	path = modules/cli
 	url = https://github.com/Code-Inspect/flowr-cli

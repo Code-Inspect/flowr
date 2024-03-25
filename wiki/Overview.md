@@ -52,9 +52,9 @@ The [mermaid](https://mermaid.js.org/) diagram above presents the architecture o
 Primarily, *flowR* provides a backward [program slicer](https://en.wikipedia.org/wiki/Program_slicing) for the [*R*](https://www.r-project.org/) programming language, which is available with the corresponding [slicer](https://github.com/Code-Inspect/flowr/tree/main/src/slicing) module and exposed by the [`slicer`](#generate-static-slices) script.
 Its subcomponents (like the custom [R bridge](https://github.com/Code-Inspect/flowr/tree/main/src/r-bridge) or the static [dataflow analysis]("https://github.com/Code-Inspect/flowr/tree/main/src/dataflow)) are not important if you simply wish to use *flowR*.
 
-The [benchmarker](https://github.com/Code-Inspect/flowr/tree/main/benchmark/src) module is only of interest if you want to benchmark/measure the runtime performance and reduction of the slicer. It is available with the [`benchmark`](#benchmark-the-slicer) script.
+The [benchmarker](https://github.com/Code-Inspect/flowr-benchmark/tree/main/src) module is only of interest if you want to benchmark/measure the runtime performance and reduction of the slicer. It is available with the [`benchmark`](#benchmark-the-slicer) script.
 
-The [statistics](https://github.com/Code-Inspect/flowr/tree/main/statistics/src) module is mostly independent of the slicer and can be used to analyze R files regarding their use of function definitions, assignments, and more.  It is used to identify common patterns in R code and is available with the [`statistics`](#generate-usage-statistics-of-r-code) script.
+The [statistics](https://github.com/Code-Inspect/flowr-statistics/tree/main/src) module is mostly independent of the slicer and can be used to analyze R files regarding their use of function definitions, assignments, and more.  It is used to identify common patterns in R code and is available with the [`statistics`](#generate-usage-statistics-of-r-code) script.
 
 The [core](https://github.com/Code-Inspect/flowr/tree/main/src/core) module contains *flowR*'s read-eval-print loop (REPL) and *flowR*'s server. Furthermore, it contains the root definitions of how *flowR* slices (see the [interface](https://github.com/Code-Inspect/flowr/wiki/Interface) wiki page for more information).
 
