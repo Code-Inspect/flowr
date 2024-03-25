@@ -159,15 +159,31 @@ export function normalizeBasedOnType(
 	if(splitOnSemicolon.length > 1) {
 		log.trace(`found ${splitOnSemicolon.length} expressions by semicolon-split, parsing them separately`)
 		const flattened = []
+		let i = 0
+		const semis = []
 		for(const sub of splitOnSemicolon) {
 			const result = normalizeBasedOnType(data, sub)
+			const semi = semiColons[i++]
 			if(result.length === 1 && result[0].type === RType.ExpressionList) {
+				if(semi) {
+					result[0].info.additionalTokens ??= []
+					result[0].info.additionalTokens.push(semi)
+				}
 				flattened.push(...result[0].children)
 			} else {
+				if(semi) {
+					if(result.length > 0) {
+						const last = result[result.length - 1] as RNode
+						last.info.additionalTokens ??= []
+						last.info.additionalTokens?.push(semi)
+					} else {
+						semis.push(semi)
+					}
+				}
 				flattened.push(...result)
 			}
 		}
-		return [...flattened, ...semiColons]
+		return [...flattened, ...semis]
 	}
 
 	/*

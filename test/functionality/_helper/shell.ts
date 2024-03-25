@@ -191,10 +191,10 @@ function printIdMapping(ids: NodeId[], map: DecoratedAstMap): string {
 }
 
 /**
- * Please note, that theis executes the reconstruction step separately, as it predefines the result of the slice with the given ids.
+ * Please note, that this executes the reconstruction step separately, as it predefines the result of the slice with the given ids.
  */
-export function assertReconstructed(name: string, shell: RShell, input: string, ids: NodeId | NodeId[], expected: string, userConfig?: Partial<TestConfiguration>, getId: IdGenerator<NoInfo> = deterministicCountingIdGenerator(0)): Mocha.Test {
-	const selectedIds = Array.isArray(ids) ? ids : [ids]
+export function assertReconstructed(name: string, shell: RShell, input: string, ids: NodeId | readonly NodeId[], expected: string, userConfig?: Partial<TestConfiguration>, getId: IdGenerator<NoInfo> = deterministicCountingIdGenerator(0)): Mocha.Test {
+	const selectedIds :NodeId[] = (Array.isArray(ids) ? ids : [ids]) as NodeId[]
 	return it(name, async function() {
 		await ensureConfig(shell, this, userConfig)
 
@@ -220,15 +220,10 @@ export function assertSliced(name: string, shell: RShell, input: string, criteri
 			criterion:      criteria,
 		}).allRemainingSteps()
 
-
-		try {
-			assert.strictEqual(
-				result.reconstruct.code, expected,
-				`got: ${result.reconstruct.code}, vs. expected: ${expected}, for input ${input} (slice: ${printIdMapping(result.slice.decodedCriteria.map(({ id }) => id), result.normalize.idMap)}), url: ${graphToMermaidUrl(result.dataflow.graph, result.normalize.idMap, true, result.slice.result)}`
-			)
-		} catch(e) {
-			console.error('vis-got:\n', graphToMermaidUrl(result.dataflow.graph, result.normalize.idMap))
-			throw e
-		}
+		assert.strictEqual(
+			result.reconstruct.code, expected,
+			`got: ${result.reconstruct.code}, vs. expected: ${expected}, for input ${input} (slice: ${printIdMapping(result.slice.decodedCriteria.map(({ id }) => id), result.normalize.idMap)}), url: ${graphToMermaidUrl(result.dataflow.graph, result.normalize.idMap, true, result.slice.result)}`
+			//, url: ${graphToMermaidUrl(result.dataflow.graph, result.normalize.idMap, true, result.slice.result)}
+		)
 	})
 }

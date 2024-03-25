@@ -10,7 +10,7 @@ import { RawRType, RType } from '../../../../model'
 import { normalizeComment } from '../other'
 import { normalizeBreak, normalizeNext } from '../loops'
 import { normalizeLineDirective } from '../other/line-directive'
-import type { RDelimiter } from '../../../../model/nodes/info'
+import type { RDelimiter, RDelimiterNode } from '../../../../model/nodes/info'
 
 function normalizeDelimiter(data: ParserData, elem: NamedXmlBasedJson): RDelimiter {
 	const {
@@ -21,7 +21,7 @@ function normalizeDelimiter(data: ParserData, elem: NamedXmlBasedJson): RDelimit
 		type:    RType.Delimiter,
 		location,
 		lexeme:  content,
-		subtype: elem.name
+		subtype: elem.name as RDelimiterNode
 	}
 }
 
@@ -39,6 +39,7 @@ export function tryNormalizeSingleNode(data: ParserData, elem: NamedXmlBasedJson
 		case RawRType.ParenRight:
 		case RawRType.BraceLeft:
 		case RawRType.BraceRight:
+		case RawRType.ForIn:
 			return normalizeDelimiter(data, elem)
 		case RawRType.Comment:
 			return normalizeComment(data, elem.content)

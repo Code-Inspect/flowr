@@ -47,6 +47,7 @@ describe('RShell sessions', function() {
 			})
 		)
 	})
+	//this test fails, object a can not be found
 	testWithShell('clear environment should remove variable information', async shell => {
 		shell.continueOnError() // we will produce an error!
 		shell.sendCommand('options(warn=-1); invisible(Sys.setlocale("LC_MESSAGES", \'en_GB.UTF-8\'))')

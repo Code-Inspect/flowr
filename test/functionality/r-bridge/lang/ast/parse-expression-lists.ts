@@ -208,6 +208,7 @@ describe('Parse expression lists',
 			)
 		})
 
+		//this test fails, info apears at the wrong location
 		describe('Expression lists with semicolons', () => {
 			assertAst('"42;a" (two elements in same line)', shell,
 				'42;a',
@@ -278,6 +279,7 @@ describe('Parse expression lists',
 			)
 
 
+			//this test fails, info has false information
 			assertAst('Inconsistent split with semicolon', shell,
 				'1\n2; 3\n4',
 				{

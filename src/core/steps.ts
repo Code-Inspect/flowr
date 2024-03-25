@@ -16,7 +16,8 @@
 import type { MergeableRecord } from '../util/objects'
 import { retrieveParseDataFromRCode } from '../r-bridge'
 import { produceDataFlowGraph } from '../dataflow'
-import { reconstructToCode, staticSlicing } from '../slicing'
+import { staticSlicing } from '../slicing'
+import { reconstructToCode } from '../reconstruct/main'
 import type { IStepPrinter } from './print/print'
 import { internalPrinter, StepOutputFormat } from './print/print'
 import {
