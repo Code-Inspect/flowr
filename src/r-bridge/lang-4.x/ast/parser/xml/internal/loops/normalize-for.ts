@@ -1,6 +1,7 @@
 import type { NormalizerData } from '../../normalizer-data'
 import type { NamedXmlBasedJson, XmlBasedJson } from '../../input-format'
-import { XmlParseError, childrenKey, getKeyGuarded } from '../../input-format'
+import { childrenKey, getKeyGuarded, XmlParseError } from '../../input-format'
+
 import { parseLog } from '../../../json/parser'
 import { ensureExpressionList, getTokenType, retrieveMetaStructure } from '../../normalize-meta'
 import { guard } from '../../../../../../../util/assert'
@@ -13,7 +14,7 @@ import { normalizeComment } from '../other/normalize-comment'
 import type { RNode } from '../../../../model/model'
 import type { RSymbol } from '../../../../model/nodes/r-symbol'
 import type { RComment } from '../../../../model/nodes/r-comment'
-
+import { RDelimiter } from '../../../../model/nodes/info/r-delimiter';
 
 export function tryNormalizeFor(
 	data: NormalizerData,
@@ -68,7 +69,7 @@ export function tryNormalizeFor(
 	}
 }
 
-function normalizeForHead(data: NormalizerData, forCondition: XmlBasedJson): { variable: RSymbol | undefined, vector: RNode | undefined, comments: RComment[] } {
+function normalizeForHead(data: NormalizerData, forCondition: XmlBasedJson): { variable: RSymbol | undefined, vector: RNode | undefined, comments: (RNode | RDelimiter)[] } {
 	// must have a child which is `in`, a variable on the left, and a vector on the right
 	const children: NamedXmlBasedJson[] = getKeyGuarded<XmlBasedJson[]>(forCondition, childrenKey).map(content => ({ name: getTokenType(content), content }))
 	const { comments, others } = splitComments(children)
@@ -81,7 +82,8 @@ function normalizeForHead(data: NormalizerData, forCondition: XmlBasedJson): { v
 
 	const vector = normalizeExpressions(data, [others[inPosition + 1]])
 	guard(vector.length === 1 && vector[0].type !== RType.Delimiter, () => `for loop vector should have been parsed to a single element but was ${JSON.stringify(vector)}`)
-	const parsedComments = comments.map(c => normalizeComment(data, c.content))
+	const parsedComments: (RNode | RDelimiter)[] = comments.map(c => normalizeComment(data, c.content))
+	parsedComments.push(...normalizeExpressions(data, others.filter(token => token.name === RawRType.ForIn || token.name === RawRType.ParenLeft || token.name === RawRType.ParenRight))) // e.g., push '('
 
 	return { variable, vector: vector[0], comments: parsedComments }
 }

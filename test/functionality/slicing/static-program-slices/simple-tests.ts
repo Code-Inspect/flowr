@@ -34,7 +34,7 @@ while(i > 3) {
   x <- x * 2
 }
 cat(x)
-    `, ['6@x'], 'x <- 1\nwhile(i > 3) x <- x * 2\ncat(x)')
+    `, ['6@x'], 'x <- 1\nwhile(i > 3) {\n  x <- x * 2\n}\ncat(x)')
 
 		assertSliced(label('if-then', ['name-normal', 'if', 'newlines', 'numbers', 'unnamed-arguments', ...OperatorDatabase['<-'].capabilities, 'function-calls', ...OperatorDatabase['*'].capabilities, 'precedence']),
 			shell, `
@@ -139,7 +139,9 @@ cat("Product:", product, "\\n")
 			`sum <- 0
 w <- 7
 N <- 10
-for(i in 1:(N-1)) sum <- sum + i + w`
+for (i in 1:(N-1)) {
+  sum <- sum + i + w
+}`
 		)
 
 		assertSliced(label('Sum rhs in for', capabilities),
@@ -147,21 +149,27 @@ for(i in 1:(N-1)) sum <- sum + i + w`
 			`sum <- 0
 w <- 7
 N <- 10
-for(i in 1:(N-1)) sum <- sum + i + w`
+for (i in 1:(N-1)) {
+  sum <- sum + i + w
+}`
 		)
 
 		assertSliced(label('Product lhs in for', capabilities),
 			shell, code, ['9:3'],
 			`product <- 1
 N <- 10
-for(i in 1:(N-1)) product <- product * i`
+for (i in 1:(N-1)) {
+  product <- product * i
+}`
 		)
 
 		assertSliced(label('Product rhs in for', capabilities),
 			shell, code, ['9:14'],
 			`product <- 1
 N <- 10
-for(i in 1:(N-1)) product <- product * i`
+for (i in 1:(N-1)) {
+  product <- product * i
+}`
 		)
 
 		assertSliced(label('Sum in call', capabilities),
@@ -169,7 +177,9 @@ for(i in 1:(N-1)) product <- product * i`
 			`sum <- 0
 w <- 7
 N <- 10
-for(i in 1:(N-1)) sum <- sum + i + w
+for (i in 1:(N-1)) {
+  sum <- sum + i + w
+}
 cat("Sum:", sum, "\\n")`
 		)
 
@@ -177,7 +187,9 @@ cat("Sum:", sum, "\\n")`
 			shell, code, ['13:17'],
 			`product <- 1
 N <- 10
-for(i in 1:(N-1)) product <- product * i
+for (i in 1:(N-1)) {
+  product <- product * i
+}
 cat("Product:", product, "\\n")`
 		)
 

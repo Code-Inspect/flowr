@@ -11,6 +11,7 @@ describe('RShellExecutor', function() {
 		assert.isTrue(semver.gt(version, '0.0.0'), `the version ${JSON.stringify(version)} should not be 0.0.0`)
 	})
 
+	//this test fails, object a can not be found
 	it('ignore errors', () => {
 		const executor = new RShellExecutor()
 			.addPrerequisites('options(warn=-1); invisible(Sys.setlocale("LC_MESSAGES", \'en_GB.UTF-8\'))')
