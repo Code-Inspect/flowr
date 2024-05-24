@@ -12,6 +12,9 @@ describe('Simple', withShell(shell => {
 		}
 	})
 	describe('Constant conditionals', () => {
+		assertSliced('if(TRUE)', shell, 'if(TRUE) { x <- 3 } else { x <- 4}\nx', ['2@x'], 'if(TRUE) { x <- 3 }\nx')
+		//if reconstruction needs more work to handle this
+		assertSliced('if(FALSE)', shell, 'if(FALSE) { x <- 3 } else { x <- 4}\nx', ['2@x'], 'if(FALSE) {}         else { x <- 4}\nx')
 		assertSliced(label('if(TRUE)', ['name-normal', 'logical', 'numbers', ...OperatorDatabase['<-'].capabilities, 'newlines', 'if']),
 			shell, 'if(TRUE) { x <- 3 } else { x <- 4 }\nx', ['2@x'], 'x <- 3\nx'
 		)
@@ -25,6 +28,9 @@ x <- 1
 for(i in 1:10) {
   x <- x * 2
 }
+cat(x)
+    `, ['6@x'], 'x <- 1\nfor(i in 1:10) {\n  x <- x * 2\n}\ncat(x)')
+		assertSliced('While-Loop', shell, `
 print(x)
     `, ['6@x'], 'x <- 1\nfor(i in 1:10) x <- x * 2\nx', {
 				expectedOutput: '[1] 1024'
@@ -36,18 +42,7 @@ while(i > 3) {
   x <- x * 2
 }
 cat(x)
-    `, ['6@x'], 'x <- 1\nwhile(i > 3) x <- x * 2\nx')
-
-		assertSliced(label('if-then', ['name-normal', 'if', 'newlines', 'numbers', 'unnamed-arguments', ...OperatorDatabase['<-'].capabilities, 'function-calls', ...OperatorDatabase['*'].capabilities, 'precedence']),
-			shell, `
-x <- 1
-if(i > 3) {
-    x <- x * 2
-}
-cat(x)
-    `, ['6@x'], `x <- 1
-if(i > 3) { x <- x * 2 }
-x`)
+    `, ['6@x'], 'x <- 1\nwhile(i > 3) {\n  x <- x * 2\n}\ncat(x)')
 
 		assertSliced(label('independent if-then with extra requirements', ['name-normal', 'if', 'newlines', 'unnamed-arguments', 'numbers', ...OperatorDatabase['<-'].capabilities, 'function-calls', ...OperatorDatabase['*'].capabilities, 'precedence']),
 			shell, `
@@ -75,6 +70,11 @@ x`, {
 			shell, 'a <- 1:10\na[1:5] <- 3\na', ['3@a'], 'a <- 1 : 10\na[1:5] <- 3\na')
 		describe('Definitions', () => {
 			describe('[[', () => {
+				const code = '\na <- list(1,2)\na[[1]] = 2\na[[2]] = 3\nb[[4]] = 5\ncat(a)\na <- list(3,4)\ncat(a)\n'
+				//we get an added space in front of the access
+				assertSliced('Repeated named access and definition', shell, code, ['6@a'], 'a <- list(1,2)\na[[1]] = 2\na[[2]] = 3\ncat(a)')
+				assertSliced('Full redefinitions still apply', shell, code, ['8@a'], `a <- list(3,4)
+cat(a)`)
 				const code = `
 a <- list(1,2)
 a[[1]] = 2
@@ -94,6 +94,11 @@ a`)
 a`)
 			})
 			describe('$', () => {
+				const codeB = '\na <- list(a=1,b=2)\na$a = 2\na$b = 3\nb[[4]] = 5\ncat(a)\na <- list(a=3,b=4)\ncat(a)\n'
+				//we get an added space in front of the access
+				assertSliced('Repeated named access and definition', shell, codeB, ['6@a'], 'a <- list(a=1,b=2)\na$a = 2\na$b = 3\ncat(a)')
+				assertSliced('Full redefinitions still apply', shell, codeB, ['8@a'], `a <- list(a=3,b=4)
+cat(a)`)
 				const codeB = `
 a <- list(a=1,b=2)
 a$a = 2
@@ -143,7 +148,9 @@ cat("Product:", product, "\\n")
 			`sum <- 0
 w <- 7
 N <- 10
-for(i in 1:(N-1)) sum <- sum + i + w`, {
+for (i in 1:(N-1)) {
+  sum <- sum + i + w
+}`, {
 				expectedOutput: 'Sum: 108\nProduct: 362880'
 			}
 		)
@@ -153,21 +160,27 @@ for(i in 1:(N-1)) sum <- sum + i + w`, {
 			`sum <- 0
 w <- 7
 N <- 10
-for(i in 1:(N-1)) sum <- sum + i + w`
+for (i in 1:(N-1)) {
+  sum <- sum + i + w
+}`
 		)
 
 		assertSliced(label('Product lhs in for', capabilities),
 			shell, code, ['9:3'],
 			`product <- 1
 N <- 10
-for(i in 1:(N-1)) product <- product * i`
+for (i in 1:(N-1)) {
+  product <- product * i
+}`
 		)
 
 		assertSliced(label('Product rhs in for', capabilities),
 			shell, code, ['9:14'],
 			`product <- 1
 N <- 10
-for(i in 1:(N-1)) product <- product * i`
+for (i in 1:(N-1)) {
+  product <- product * i
+}`
 		)
 
 		assertSliced(label('Sum in call', capabilities),
@@ -175,16 +188,20 @@ for(i in 1:(N-1)) product <- product * i`
 			`sum <- 0
 w <- 7
 N <- 10
-for(i in 1:(N-1)) sum <- sum + i + w
-sum`
+for (i in 1:(N-1)) {
+  sum <- sum + i + w
+}
+cat("Sum:", sum, "\\n")`
 		)
 
 		assertSliced(label('Product in call', capabilities),
 			shell, code, ['13:17'],
 			`product <- 1
 N <- 10
-for(i in 1:(N-1)) product <- product * i
-product`
+for (i in 1:(N-1)) {
+  product <- product * i
+}
+cat("Product:", product, "\\n")`
 		)
 
 		assertSliced(label('Top by name', capabilities),

@@ -68,7 +68,7 @@ describe('Simple', withShell(shell => {
 
 		describe('for', () => {
 			const largeFor = `
-      for (i in 1:20) { 
+      for (i in 1:20) {
         y <- 9
         x <- 5
         12 -> x
@@ -90,6 +90,40 @@ describe('Simple', withShell(shell => {
 				assertReconstructed(label(`${JSON.stringify(id)}: ${code}`, caps), shell, code, id, expected)
 			}
 		})
+	})
+
+	describe('function definition', () => {
+		const testCases: {name: string, case: string, argument: string[], expected: string}[] = [
+			{ name: 'simple function', case: 'a <- function (x) { x <- 2 }', argument: ['0'], expected: 'a <- function (x) { x <- 2 }' },
+			{ name: 'function body extracted', case: 'a <- function (x) { x <- 2 }', argument: ['5'], expected: 'x <- 2' },
+			{ name: 'multi-line function', case: 'a <- function (x) { x <- 2;\nx + 4 }', argument: ['0'], expected: 'a <- function (x) { x <- 2;\nx + 4 }' },
+			{ name: 'only one function body extracted', case: 'a <- function (x) { x <- 2; x + 4 }', argument: ['5'], expected: 'x <- 2' }
+		]
+		for(const test of testCases) {
+			assertReconstructed(test.name, shell, test.case, test.argument, test.expected)
+		}
+	})
+
+	describe('Branches', () => {
+		const testCases: {name: string, case: string, argument: string|string[], expected: string}[] = [
+			{ name: 'simple if statement', case: 'if(TRUE) { x <- 3 } else { x <- 4 }\nx', argument: ['10', '3', '0'], expected: 'if(TRUE) { x <- 3 }\nx' },
+			{ name: 'false if statement', case: 'if(FALSE) { x <- 3 } else { x <- 4 }\nx', argument: ['10', '7', '0'], expected: 'if(FALSE) {} else         { x <- 4 }\nx' }
+		]
+		for(const test of testCases) {
+			assertReconstructed(test.name, shell, test.case, test.argument, test.expected)
+		}
+	})
+
+	describe('Functions in assignments', () => {
+		const testCases: {name: string, case: string, argument: string|string[], expected: string}[] = [
+			{ name:     'Nested Side-Effect For First', 
+				case:     'f <- function() {\n  a <- function() { x }\n  x <- 3\n  b <- a()\n  x <- 2\n  a()\n  b\n}\nb <- f()\n', 
+				argument: ['0', '1', '2', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '20', '21', '22', '23'], 
+				expected: 'f <- function() {\n  a <- function() { x }\n  x <- 3\n  b <- a()\n  x <- 2\n  a()\n  b\n}\nb <- f()' }
+		] 
+		for(const test of testCases) {
+			assertReconstructed(test.name, shell, test.case, test.argument, test.expected)
+		}
 	})
 	describe('Failures in practice', () => {
 		assertReconstructed(label('Reconstruct expression list in call', ['name-normal', ...OperatorDatabase['<-'].capabilities, 'unnamed-arguments', 'call-normal', 'newlines']), shell, `

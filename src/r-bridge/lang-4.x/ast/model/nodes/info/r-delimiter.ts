@@ -2,7 +2,6 @@ import type { RawRType, RType } from '../../type'
 import type { Location } from '../../model'
 import type { MergeableRecord } from '../../../../../../util/objects'
 
-
 /**
  * Combines '`{`', '`}`', '`(`', '`)`', and other delimiters used by R, they are ignored for most analysis
  * but helpful during reconstruction.
