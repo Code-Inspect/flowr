@@ -9,6 +9,18 @@ import type { DecodedCriteria } from '../criterion/parse'
  */
 export interface NodeToSlice {
 	readonly id:                 NodeId
+	/**
+	 * The call stack the node is visited in.
+	 * Please note that this is explicitly not part of the node-fingerprint. The same call stack
+	 * can have different consequences (e.g., in a loop in which the iteration does not push a new call
+	 * frame but may have implications on the values of variables etc.).
+	 * Such changes are always implied by the (base)Environment.
+	 * On the other hand, the call stack is _not_ a set as it is easily possible to have the same node
+	 * within it multiple times (e.g., in the case of recursion).
+	 *
+	 * Call stacks may be undefined if we do not need/want to know it
+	 */
+	readonly callStack:          readonly NodeId[] | undefined
 	/** used for calling context, etc. */
 	readonly baseEnvironment:    REnvironmentInformation
 	/** if we add a function call, we may need it only for its side effects (e.g., a redefinition of a global variable), if so, 'returns' links will not be traced */

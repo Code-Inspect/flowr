@@ -44,9 +44,7 @@ export function sliceForCall(current: NodeToSlice, callerInfo: DataflowGraphVert
 	const activeEnvironment = retrieveActiveEnvironment(callerInfo, baseEnvironment)
 	const activeEnvironmentFingerprint = envFingerprint(activeEnvironment)
 
-	const name = callerInfo.name
-	guard(name !== undefined, () => `name of id: ${callerInfo.id} can not be found in id map`)
-	const functionCallDefs = resolveByName(name, activeEnvironment)?.filter(d => d.definedAt !== BuiltIn)?.map(d => d.nodeId) ?? []
+	const functionCallDefs = resolveByName(callerInfo.name, activeEnvironment)?.filter(d => d.definedAt !== BuiltIn)?.map(d => d.nodeId) ?? []
 
 	for(const [target, outgoingEdge] of outgoingEdges[1].entries()) {
 		if(edgeIncludesType(outgoingEdge.types, EdgeType.Calls)) {
@@ -56,7 +54,9 @@ export function sliceForCall(current: NodeToSlice, callerInfo: DataflowGraphVert
 
 	const functionCallTargets = getAllLinkedFunctionDefinitions(new Set(functionCallDefs), dataflowGraph)
 
-	for(const [_, functionCallTarget] of functionCallTargets) {
+	const callStack = [...current.callStack ?? [], callerInfo.id]
+
+	for(const [, functionCallTarget] of functionCallTargets) {
 		// all those linked within the scopes of other functions are already linked when exiting a function definition
 		for(const openIn of (functionCallTarget as DataflowGraphVertexFunctionDefinition).subflow.in) {
 			const defs = openIn.name ? resolveByName(openIn.name, activeEnvironment) : undefined
@@ -64,18 +64,28 @@ export function sliceForCall(current: NodeToSlice, callerInfo: DataflowGraphVert
 				continue
 			}
 			for(const def of defs.filter(d => d.nodeId !== BuiltIn)) {
-				queue.add(def.nodeId, baseEnvironment, baseEnvPrint, current.onlyForSideEffects)
+				queue.add({
+					id:                 def.nodeId,
+					baseEnvironment,
+					onlyForSideEffects: current.onlyForSideEffects,
+					callStack
+				}, baseEnvPrint)
 			}
 		}
 
 		for(const exitPoint of (functionCallTarget as DataflowGraphVertexFunctionDefinition).exitPoints) {
-			queue.add(exitPoint, activeEnvironment, activeEnvironmentFingerprint, current.onlyForSideEffects)
+			queue.add({
+				id:                 exitPoint,
+				baseEnvironment:    activeEnvironment,
+				onlyForSideEffects: current.onlyForSideEffects,
+				callStack
+			}, activeEnvironmentFingerprint)
 		}
 	}
 }
 
-/** Returns true if we found at least one return edge */
-export function handleReturns(queue: VisitingQueue, currentEdges: OutgoingEdges, baseEnvFingerprint: Fingerprint, baseEnvironment: REnvironmentInformation): boolean {
+/** Returns true if we found at least one return edge, applies all of them to the queue */
+export function handleReturns(current: NodeToSlice, queue: VisitingQueue, currentEdges: OutgoingEdges, baseEnvFingerprint: Fingerprint, baseEnvironment: REnvironmentInformation): boolean {
 	let found = false
 	for(const [, edge] of currentEdges) {
 		if(edgeIncludesType(edge.types, EdgeType.Returns)) {
@@ -87,10 +97,13 @@ export function handleReturns(queue: VisitingQueue, currentEdges: OutgoingEdges,
 		return false
 	}
 	for(const [target, edge] of currentEdges) {
-		if(edgeIncludesType(edge.types, EdgeType.Returns)) {
-			queue.add(target, baseEnvironment, baseEnvFingerprint, false)
-		} else if(edgeIncludesType(edge.types, EdgeType.Reads)) {
-			queue.add(target, baseEnvironment, baseEnvFingerprint, false)
+		if(edgeIncludesType(edge.types, EdgeType.Returns | EdgeType.Reads)) {
+			queue.add({
+				id:                 target,
+				baseEnvironment,
+				onlyForSideEffects: false,
+				callStack:          current.callStack
+			}, baseEnvFingerprint)
 		} else if(edgeIncludesType(edge.types, EdgeType.Argument)) {
 			queue.potentialArguments.add(target)
 		}

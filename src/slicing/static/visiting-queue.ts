@@ -2,7 +2,6 @@ import type { Fingerprint } from './fingerprint'
 import { fingerprint } from './fingerprint'
 import type { NodeToSlice, SliceResult } from './slicer-types'
 import { slicerLogger } from './static-slicer'
-import type { REnvironmentInformation } from '../../dataflow/environments/environment'
 import type { NodeId } from '../../r-bridge/lang-4.x/ast/model/processing/node-id'
 
 export class VisitingQueue {
@@ -20,26 +19,25 @@ export class VisitingQueue {
 
 	/**
 	 * Adds a node to the queue if it has not been seen before.
-	 * @param target             - the node to add
-	 * @param env                - the environment the node is traversed in
-	 * @param envFingerprint     - the fingerprint of the environment
-	 * @param onlyForSideEffects - whether the node is only used for its side effects
+	 * @param node           - the {@link NodeToSlice|node} to add
+	 * @param envFingerprint - The environment fingerprint is passed separately to encourage external caching.
 	 */
-	public add(target: NodeId, env: REnvironmentInformation, envFingerprint: string, onlyForSideEffects: boolean): void {
-		const idCounter = this.idThreshold.get(target) ?? 0
+	public add(node: NodeToSlice, envFingerprint: string): void {
+		const { id, onlyForSideEffects } = node
+		const idCounter = this.idThreshold.get(id) ?? 0
 		if(idCounter > this.threshold) {
-			slicerLogger.warn(`id: ${target} has been visited ${idCounter} times, skipping`)
+			slicerLogger.warn(`id: ${id} has been visited ${idCounter} times, skipping`)
 			this.timesHitThreshold++
 			return
 		}
 
 		/* we do not include the in call part in the fingerprint as it is 'deterministic' from the source position */
-		const print = fingerprint(target, envFingerprint, onlyForSideEffects)
+		const print = fingerprint(id, envFingerprint, onlyForSideEffects)
 
 		if(!this.seen.has(print)) {
-			this.idThreshold.set(target, idCounter + 1)
-			this.seen.set(print, target)
-			this.queue.push({ id: target, baseEnvironment: env, onlyForSideEffects })
+			this.idThreshold.set(id, idCounter + 1)
+			this.seen.set(print, id)
+			this.queue.push(node)
 		}
 	}
 

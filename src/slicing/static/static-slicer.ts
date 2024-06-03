@@ -34,7 +34,12 @@ export function staticSlicing(graph: DataflowGraph, ast: NormalizedAst, criteria
 		const emptyEnv = initializeCleanEnvironments()
 		const basePrint = envFingerprint(emptyEnv)
 		for(const startId of decodedCriteria) {
-			queue.add(startId.id, emptyEnv, basePrint, false)
+			queue.add({
+				id:                 startId.id,
+				callStack:          [],
+				baseEnvironment:    emptyEnv,
+				onlyForSideEffects: false
+			}, basePrint)
 			// retrieve the minimum depth of all nodes to only add control dependencies if they are "part" of the current execution
 			minDepth = Math.min(minDepth, ast.idMap.get(startId.id)?.info.depth ?? minDepth)
 			sliceSeedIds.add(startId.id)
@@ -59,7 +64,12 @@ export function staticSlicing(graph: DataflowGraph, ast: NormalizedAst, criteria
 			const topLevel = graph.isRoot(id) || sliceSeedIds.has(id)
 			for(const cd of currentVertex.controlDependencies) {
 				if(!topLevel || (ast.idMap.get(cd.id)?.info.depth ?? 0) <= minDepth) {
-					queue.add(cd.id, baseEnvironment, baseEnvFingerprint, false)
+					queue.add({
+						id:                 cd.id,
+						baseEnvironment,
+						callStack:          [],
+						onlyForSideEffects: false
+					}, baseEnvFingerprint)
 				}
 			}
 		}
@@ -69,7 +79,7 @@ export function staticSlicing(graph: DataflowGraph, ast: NormalizedAst, criteria
 				sliceForCall(current, currentVertex, graph, queue)
 			}
 
-			const ret = handleReturns(queue, currentEdges, baseEnvFingerprint, baseEnvironment)
+			const ret = handleReturns(current, queue, currentEdges, baseEnvFingerprint, baseEnvironment)
 			if(ret) {
 				continue
 			}
@@ -81,12 +91,27 @@ export function staticSlicing(graph: DataflowGraph, ast: NormalizedAst, criteria
 			}
 			const t = shouldTraverseEdge(types)
 			if(t === TraverseEdge.Always) {
-				queue.add(target, baseEnvironment, baseEnvFingerprint, false)
+				queue.add({
+					id:                 target,
+					baseEnvironment,
+					callStack:          current.callStack,
+					onlyForSideEffects: false
+				}, baseEnvFingerprint)
 			} else if(t === TraverseEdge.DefinedByOnCall && queue.potentialArguments.has(target)) {
-				queue.add(target, baseEnvironment, baseEnvFingerprint, false)
+				queue.add({
+					id:                 target,
+					baseEnvironment,
+					callStack:          current.callStack,
+					onlyForSideEffects: false
+				}, baseEnvFingerprint)
 				queue.potentialArguments.delete(target)
 			} else if(t === TraverseEdge.SideEffect) {
-				queue.add(target, baseEnvironment, baseEnvFingerprint, true)
+				queue.add({
+					id:                 target,
+					baseEnvironment,
+					callStack:          current.callStack,
+					onlyForSideEffects: true
+				}, baseEnvFingerprint)
 			}
 		}
 	}
