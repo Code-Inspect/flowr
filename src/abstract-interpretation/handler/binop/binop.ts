@@ -1,42 +1,41 @@
-import type { Handler } from '../handler'
-import type { AINode } from '../../processor'
-import { aiLogger } from '../../processor'
-import { guard } from '../../../util/assert'
-import { operators } from './operators'
+import { Handler } from '../handler'
+import type { AINode, AINodeStore } from '../../ainode'
 import type { ParentInformation } from '../../../r-bridge/lang-4.x/ast/model/processing/decorate'
 import type { RBinaryOp } from '../../../r-bridge/lang-4.x/ast/model/nodes/r-binary-op'
+import { guard } from '../../../util/assert'
+import { operators } from './operators'
+import type { NodeId } from '../../../r-bridge/lang-4.x/ast/model/processing/node-id'
+import type { DataflowInformation } from '../../../dataflow/info'
 
-export type BinaryOpProcessor = (lhs: AINode, rhs: AINode, node: RBinaryOp<ParentInformation>) => AINode
+export type BinOpOperators = Record<string, (lhs: AINode, rhs: AINode, node: RBinaryOp<ParentInformation>) => AINodeStore>
 
-export class BinOp implements Handler<AINode> {
-	lhs: AINode | undefined
-	rhs: AINode | undefined
+export class BinOp extends Handler {
+	lhs: NodeId | undefined
+	rhs: NodeId | undefined
 
-	constructor(readonly node: RBinaryOp<ParentInformation>) {}
-
-	getName(): string {
-		return `Bin Op (${this.node.operator})`
+	constructor(
+		dfg: DataflowInformation,
+		domains: AINodeStore,
+		private readonly node: RBinaryOp<ParentInformation>
+	) {
+		super(dfg, domains, `Bin Op (${node.operator})`)
 	}
 
-	enter(): void {
-		aiLogger.trace(`Entered ${this.getName()}`)
+	exit(): AINodeStore {
+		const lhs = this.domains.get(this.lhs)
+		const rhs = this.domains.get(this.rhs)
+		guard(lhs !== undefined, `No LHS found for assignment ${this.node.info.id}`)
+		guard(rhs !== undefined, `No RHS found for assignment ${this.node.info.id}`)
+		this.domains.updateWith(operators[this.node.operator](lhs, rhs, this.node))
+		return super.exit()
 	}
 
-	exit(): AINode {
-		aiLogger.trace(`Exited ${this.getName()}`)
-		guard(this.lhs !== undefined, `No LHS found for assignment ${this.node.info.id}`)
-		guard(this.rhs !== undefined, `No RHS found for assignment ${this.node.info.id}`)
-		const processor: BinaryOpProcessor | undefined = operators[this.node.operator]
-		guard(processor !== undefined, `No processor found for binary operator ${this.node.operator}`)
-		return processor(this.lhs, this.rhs, this.node)
-	}
-
-	next(node: AINode): void {
-		aiLogger.trace(`${this.getName()} received`)
+	next(aiNodes: AINodeStore): void {
+		super.next(aiNodes)
 		if(this.lhs === undefined) {
-			this.lhs = node
+			this.lhs = this.node.lhs.info.id
 		} else if(this.rhs === undefined) {
-			this.rhs = node
+			this.rhs = this.node.rhs.info.id
 		} else {
 			guard(false, `BinOp ${this.node.info.id} already has both LHS and RHS`)
 		}

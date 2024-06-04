@@ -3,6 +3,8 @@ import {
 	doIntervalsOverlap,
 	Domain,
 	Interval,
+	narrowDomain,
+	NarrowKind,
 	subtractDomains,
 	unifyOverlappingIntervals
 } from '../../../src/abstract-interpretation/domain'
@@ -125,5 +127,23 @@ describe('Abstract Interpretation', () => {
 			Domain.fromIntervals([new Interval({ value: 1, inclusive: true }, { value: 5, inclusive: true })]),
 			'Subtracting two domains with overlapping intervals, subtracts the intervals'
 		)
+	})
+
+	it('Domain narrowing', () => {
+		// narrowDomain(Domain.fromIntervals([new Interval({value: 0, inclusive: true}, {value: 3, inclusive: false})]),
+		// 						 Domain.fromIntervals([new Interval({value: 3, inclusive: true}, {value: 7, inclusive: true})]),
+		// 						 NarrowKind.Greater).toString()
+		narrowDomain(Domain.fromIntervals([new Interval({ value: 2, inclusive: true }, { value: 5, inclusive: true })]),
+			Domain.fromIntervals([new Interval({ value: 3, inclusive: true }, { value: 7, inclusive: true })]),
+			NarrowKind.Greater).toString()
+		console.log('')
+		narrowDomain(Domain.fromIntervals([new Interval({ value: 2, inclusive: true }, { value: 5, inclusive: true })]),
+			Domain.fromIntervals([new Interval({ value: 3, inclusive: true }, { value: 7, inclusive: true })]),
+			NarrowKind.Smaller).toString()
+		/* // const overlap = overlapIntervals(new Interval({value: 2, inclusive: true}, {value: 6, inclusive: true}), new Interval({value: 2, inclusive: false}, {value: 8, inclusive: true}))
+		const overlap = overlapIntervals(new Interval({value: 2, inclusive: true}, {value: 5, inclusive: true}), new Interval({value: 0, inclusive: true}, {value: 4, inclusive: true}))
+		console.log(`left: ${overlap.smaller?.toString() ?? 'none'}`)
+		console.log(`overlap: ${overlap.intersection?.toString() ?? 'none'}`)
+		console.log(`right: ${overlap.larger?.toString() ?? 'none'}`) */
 	})
 })

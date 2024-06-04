@@ -8,23 +8,16 @@ import { BinOp } from './handler/binop/binop'
 import { Domain, unifyDomains } from './domain'
 import { log } from '../util/log'
 import type { NodeId } from '../r-bridge/lang-4.x/ast/model/processing/node-id'
-import type {
-	NormalizedAst,
-	ParentInformation,
-	RNodeWithParent
-} from '../r-bridge/lang-4.x/ast/model/processing/decorate'
+import type { NormalizedAst } from '../r-bridge/lang-4.x/ast/model/processing/decorate'
 import type { DataflowGraphVertexInfo } from '../dataflow/graph/vertex'
 import type { OutgoingEdges } from '../dataflow/graph/graph'
 import { edgeIncludesType, EdgeType } from '../dataflow/graph/edge'
 import { RType } from '../r-bridge/lang-4.x/ast/model/type'
+import { ExprList } from './handler/exprlist/exprlist'
+import { AINode, AINodeStore } from './ainode'
+import { Conditional } from './handler/conditional/conditional'
 
 export const aiLogger = log.getSubLogger({ name: 'abstract-interpretation' })
-
-export interface AINode {
-	readonly id:      NodeId
-	readonly domain:  Domain
-	readonly astNode: RNodeWithParent<ParentInformation>
-}
 
 class Stack<ElementType> {
 	private backingStore: ElementType[] = []
@@ -44,55 +37,57 @@ class Stack<ElementType> {
 	}
 }
 
-function getDomainOfDfgChild(node: NodeId, dfg: DataflowInformation, nodeMap: Map<NodeId, AINode>): Domain {
+export function getDfgChildrenOfType(node: NodeId, dfg: DataflowInformation, ...types: EdgeType[]): NodeId[] | undefined {
 	const dfgNode: [DataflowGraphVertexInfo, OutgoingEdges] | undefined = dfg.graph.get(node)
-	guard(dfgNode !== undefined, `No DFG-Node found with ID ${node}`)
-	const [_, children] = dfgNode
-	const ids = Array.from(children.entries())
-		.filter(([_, edge]) => edgeIncludesType(edge.types, EdgeType.Reads))
-		.map(([id, _]) => id)
-	const domains: Domain[] = []
-	for(const id of ids) {
-		const domain = nodeMap.get(id)?.domain
-		guard(domain !== undefined, `No domain found for ID ${id}`)
-		domains.push(domain)
+	if(dfgNode === undefined) {
+		return undefined
 	}
-	return unifyDomains(domains)
+	const [_, children] = dfgNode
+	return Array.from(children.entries())
+		.filter(([_, edge]) => types.some(type => edgeIncludesType(edge.types, type)))
+		.map(([id, _]) => id)
+}
+
+function getDomainOfDfgChild(node: NodeId, dfg: DataflowInformation, domainStore: AINodeStore): Domain {
+	guard(dfg.graph.hasVertex(node, true), `No DFG-Node found with ID ${node}`)
+	const domains = getDfgChildrenOfType(node, dfg, EdgeType.Reads)
+		?.map(id => domainStore.get(id)?.domain)
+		.filter(domain => domain !== undefined)
+		.map(domain => domain as Domain)
+	return unifyDomains(domains ?? [])
 }
 
 export function runAbstractInterpretation(ast: NormalizedAst, dfg: DataflowInformation): DataflowInformation {
 	const cfg = extractCFG(ast)
-	const operationStack = new Stack<Handler<AINode>>()
-	const nodeMap = new Map<NodeId, AINode>()
+	const operationStack = new Stack<Handler>()
+	operationStack.push(new ExprList(dfg, AINodeStore.empty())).enter()
 	visitCfg(cfg, (node, _) => {
 		const astNode = ast.idMap.get(node.id)
+		const top = operationStack.peek()
+		guard(top !== undefined, 'No operation on the stack')
 		if(astNode?.type === RType.BinaryOp) {
-			operationStack.push(new BinOp(astNode)).enter()
+			operationStack.push(new BinOp(dfg, AINodeStore.withParent(top.domains), astNode)).enter()
+		} else if(astNode?.type === RType.IfThenElse) {
+			operationStack.push(new Conditional(dfg, AINodeStore.withParent(top.domains), astNode)).enter()
+		} else if(astNode?.type === RType.ExpressionList) {
+			operationStack.push(new ExprList(dfg, AINodeStore.withParent(top.domains))).enter()
 		} else if(astNode?.type === RType.Symbol) {
-			operationStack.peek()?.next({
-				id:      astNode.info.id,
-				domain:  getDomainOfDfgChild(node.id, dfg, nodeMap),
-				astNode: astNode,
-			})
-		} else if(astNode?.type === RType.Number){
-			const num = astNode.content.num
-			operationStack.peek()?.next({
-				id:      astNode.info.id,
-				domain:  Domain.fromScalar(num),
-				astNode: astNode,
-			})
+			top.next(AINodeStore.from(new AINode(getDomainOfDfgChild(node.id, dfg, top.domains), astNode)))
+		} else if(astNode?.type === RType.Number) {
+			top.next(AINodeStore.from(new AINode(Domain.fromScalar(astNode.content.num), astNode)))
+		} else if(astNode?.type === RType.Logical) {
+			top.next(AINodeStore.from(new AINode(astNode.content ? Domain.top() : Domain.bottom(), astNode)))
 		} else if(node.type === CfgVertexType.EndMarker) {
-			const operation = operationStack.pop()
-			if(operation === undefined) {
-				return
-			}
-			const operationResult = operation.exit()
-			guard(!nodeMap.has(operationResult.id), `Domain for ID ${operationResult.id} already exists`)
-			nodeMap.set(operationResult.id, operationResult)
-			operationStack.peek()?.next(operationResult)
+			const operationResult = operationStack.pop()?.exit()
+			guard(operationResult !== undefined, 'No operation result')
+			const newTop = operationStack.peek()
+			guard(newTop !== undefined, 'No operation on the stack')
+			newTop.next(operationResult)
 		} else {
 			aiLogger.warn(`Unknown node type ${node.type}`)
 		}
 	})
+	const result = operationStack.pop()?.exit()
+	guard(result !== undefined, 'Empty operationStack')
 	return dfg
 }
