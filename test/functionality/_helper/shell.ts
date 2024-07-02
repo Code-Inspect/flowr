@@ -22,7 +22,7 @@ import {
 	deterministicCountingIdGenerator
 } from '../../../src/r-bridge/lang-4.x/ast/model/processing/decorate'
 import {
-	DEFAULT_DATAFLOW_PIPELINE,
+	DEFAULT_DATAFLOW_PIPELINE, DEFAULT_FORWARD_RECONSTRUCT_PIPELINE,
 	DEFAULT_NORMALIZE_PIPELINE, DEFAULT_RECONSTRUCT_PIPELINE
 } from '../../../src/core/steps/pipeline/default-pipelines'
 import type { RExpressionList } from '../../../src/r-bridge/lang-4.x/ast/model/nodes/r-expression-list'
@@ -287,15 +287,18 @@ export function assertReconstructed(name: string | TestLabel, shell: RShell, inp
 	handleAssertOutput(name, shell, input, userConfig)
 	return t
 }
+export function assertForwardSliced(name: string | TestLabel, shell: RShell, input: string, criteria: SlicingCriteria, expected: string, userConfig?: Partial<TestConfigurationWithOutput>, getId: IdGenerator<NoInfo> = deterministicCountingIdGenerator(0)): Mocha.Test {
+	return assertSliced(name, shell, input, criteria, expected, userConfig, getId, true)
+}
 
-
-export function assertSliced(name: string | TestLabel, shell: RShell, input: string, criteria: SlicingCriteria, expected: string, userConfig?: Partial<TestConfigurationWithOutput>, getId: IdGenerator<NoInfo> = deterministicCountingIdGenerator(0)): Mocha.Test {
+export function assertSliced(name: string | TestLabel, shell: RShell, input: string, criteria: SlicingCriteria, expected: string, userConfig?: Partial<TestConfigurationWithOutput>, getId: IdGenerator<NoInfo> = deterministicCountingIdGenerator(0), forward = false): Mocha.Test {
 	const fullname = decorateLabelContext(name, ['slice'])
 
 	const t = it(`${JSON.stringify(criteria)} ${fullname}`, async function() {
 		await ensureConfig(shell, this, userConfig)
 
-		const result = await new PipelineExecutor(DEFAULT_RECONSTRUCT_PIPELINE,{
+		const pipeline = forward ? DEFAULT_FORWARD_RECONSTRUCT_PIPELINE : DEFAULT_RECONSTRUCT_PIPELINE
+		const result = await new PipelineExecutor(pipeline, {
 			getId,
 			request:   requestFromInput(input),
 			shell,
