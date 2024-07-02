@@ -7,6 +7,11 @@ name: "Run flowR's performance tests"
         description: "Should the resulting commits for the graphs be pushed?"
         required: true
         type: boolean
+      ref:
+        description: "The git ref to use for the benchmark data"
+        default: "refs/heads/main"
+        required: false
+        type: string
 
 jobs:
   performance-test:
@@ -63,7 +68,7 @@ jobs:
           comment-always: true
           skip-fetch-gh-pages: true
           max-items-in-chart: 100
-          ref: refs/heads/main
+          ref: ${{ inputs.ref }}
           gh-repository: ${{ github.repository }}
           benchmark-data-dir-path: wiki/stats/benchmark/
           auto-push: false
@@ -87,7 +92,7 @@ jobs:
           comment-always: true
           skip-fetch-gh-pages: true
           max-items-in-chart: 100
-          ref: refs/heads/main
+          ref: ${{ inputs.ref }}
           gh-repository: ${{ github.repository }}
           benchmark-data-dir-path: wiki/stats/benchmark/
           auto-push: false

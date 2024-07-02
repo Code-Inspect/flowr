@@ -47,6 +47,7 @@ jobs:
           fi
 
           npm run release -- --increment "$step" --ci --verbose --github.releaseName="Release v\${version} (${title})"
+          echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
         env:
           RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
           # apparently, putting the message into an env variable first sanitizes it
@@ -77,6 +78,7 @@ jobs:
     uses: Code-Inspect/flowr/.github/workflows/performance-test.yaml@main
     with:
       push: true
+      ref: refs/tags/v${{ needs.release.outputs.version }}
     secrets: inherit
 
   deploy-docker:
