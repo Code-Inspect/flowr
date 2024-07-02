@@ -1,0 +1,83 @@
+name: Check for Broken Links and Publish Wiki
+
+'on':
+  push:
+    paths:
+      - '.github/workflows/broken-links-and-wiki.yaml'
+      - '**/*.md'
+      - 'wiki/**'
+  pull_request:
+    types: [ opened ]
+    branches: [ main ]
+  workflow_dispatch:
+  schedule:
+    # every monday at night
+    - cron: '0 1 * * 1'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Setup the Environment"
+        uses: Code-Inspect/flowr/.github/actions/setup@main
+
+      - name: "Checkout Repository"
+        uses: actions/checkout@v4
+        with:
+          lfs:        true
+          submodules: true
+          token:      ${{ secrets.RELEASE_TOKEN }}
+
+      - name: "Checkout LFS"
+        run: git lfs checkout
+
+      - name: Update the Capabilities Wiki Page
+        run: |
+          npm ci
+          # test if the file exists
+          if [ -f wiki/Capabilities.md ]; then
+              cp wiki/Capabilities.md wiki/Capabilities-Old.md
+          else
+              touch wiki/Capabilities-Old.md
+          fi
+          npm run capabilities-markdown --silent > wiki/Capabilities.md
+          # test if the file changed, but ignore the first line which contains the time stamp
+          if ! diff -q <(tail -n +2 wiki/Capabilities.md) <(tail -n +2 wiki/Capabilities-Old.md); then
+              echo "Capabilities changed!"
+              echo "CHANGED=true" >> $GITHUB_ENV
+              git config --local user.email "action@github.com"
+              git config --local user.name "GitHub Action"
+              git add -f wiki/Capabilities.md
+              git commit -m "[skip ci] doc: update capabilities"
+          else
+              echo "Capabilities did not change!"
+          fi
+          # delete the old capabilities again
+          rm wiki/Capabilities-Old.md
+
+      - name: Push changed capabilities
+        if: ${{ env.CHANGED == 'true' && (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')) && !failure() }}
+        uses: ad-m/github-push-action@master
+        with:
+          branch: main
+          github_token: ${{ secrets.RELEASE_TOKEN }}
+          force: true
+
+      - name: Check the README for broken links
+        uses: becheran/mlc@v0.17.0
+        with:
+          args: --do-not-warn-for-redirect-to "http*://github.com/Code-Inspect/*,http*://code-inspect.github.io/*"  README.md
+
+      - name: Publish the Wiki
+        uses: Andrew-Chen-Wang/github-wiki-action@v4
+        # We do not need to republish if nothing changes. Furthermore, do not publish on PR as this should be done by the push on main!
+        if: ${{ (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')) && !failure() }}
+        with:
+          path: "wiki/"
+          token: ${{ secrets.GH_DEPLOY_WIKI }}
+
+      - name: Check the Wiki pages for broken links
+        uses: becheran/mlc@v0.17.0
+        if: ${{ always() && !failure() }}
+        with:
+          args: --do-not-warn-for-redirect-to "http*://github.com/Code-Inspect/*,http*://code-inspect.github.io/*" wiki/

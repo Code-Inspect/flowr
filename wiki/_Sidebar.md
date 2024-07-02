@@ -1,0 +1,10 @@
+* [*flowR* Home](https://github.com/Code-Inspect/flowr/wiki)
+  * [Setup](https://github.com/Code-Inspect/flowr/wiki/Setup)
+  * [Overview](https://github.com/Code-Inspect/flowr/wiki/Overview)
+  * [Interface](https://github.com/Code-Inspect/flowr/wiki/Interface)
+  * [Core](https://github.com/Code-Inspect/flowr/wiki/Core)
+  * [Linting and Testing](https://github.com/Code-Inspect/flowr/wiki/Linting-and-Testing)
+* Extra Information
+  * [Terminology](https://github.com/Code-Inspect/flowr/wiki/Terminology)
+  * [R's Capabilities](https://github.com/Code-Inspect/flowr/wiki/Capabilities) & [Tokens](https://github.com/Code-Inspect/flowr/wiki/Tokens)
+  * [Original Master Thesis](https://github.com/Code-Inspect/flowr/wiki/Thesis)

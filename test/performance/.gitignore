@@ -1,0 +1,4 @@
+# The actual benchmark files
+**/files/
+*.json
+*.log
