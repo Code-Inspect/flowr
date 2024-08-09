@@ -1,0 +1,115 @@
+name: "Run flowR's performance tests"
+
+'on':
+  workflow_call:
+    inputs:
+      push:
+        description: "Should the resulting commits for the graphs be pushed?"
+        required: true
+        type: boolean
+      ref:
+        description: "The git ref to use for the benchmark data"
+        default: "refs/heads/main"
+        required: false
+        type: string
+
+jobs:
+  performance-test:
+    name: "Run Performance Tests"
+    uses: flowr-analysis/flowr/.github/workflows/run.yaml@main
+    strategy:
+      fail-fast: true
+      matrix:
+        # currently we have a duplication, add your benchmark names here and in `performance-test-upload`
+        name: ['artificial', 'social-science']
+    with:
+      # 1 parallel process and 1 run
+      action: performance-test -- 1 1 "${{ matrix.name }}"
+      coverage: false
+      benchmark: ${{ matrix.name }}
+      timeout-minutes: 400
+      submodule-deps: true
+
+  performance-test-upload:
+    name: "Upload Performance Test Results"
+    runs-on: ubuntu-latest
+    needs: [ performance-test ]
+    steps:
+      - name: "Checkout Repository"
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.RELEASE_TOKEN }}
+
+      - name: "⬇️ Get benchmark Artifacts (artificial)"
+        uses: actions/download-artifact@v4
+        with:
+          name: benchmark-results-artificial
+          path: benchmark-ai/
+
+      - name: Name and Email for Git (config) and update
+        # we pull just to be totally sure
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git pull
+
+      # currently we have a duplication, add your benchmark names here and in `performance-test`
+      # Furthermore, you have to update the reset command below
+      - name: "Merge and Produce Performance Results (artificial)"
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: '"artificial" Benchmark Suite'
+          tool: 'customSmallerIsBetter'
+          output-file-path: benchmark-ai/artificial/artificial-summarized-graph.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          fail-on-alert: false
+          summary-always: false
+          comment-on-alert: true
+          comment-always: true
+          skip-fetch-gh-pages: true
+          max-items-in-chart: 100
+          ref: ${{ inputs.ref }}
+          gh-repository: ${{ github.repository }}
+          benchmark-data-dir-path: wiki/stats/benchmark/
+          auto-push: false
+
+      - name: "⬇️ Get benchmark Artifacts (social-science)"
+        uses: actions/download-artifact@v4
+        with:
+          name: benchmark-results-social-science
+          path: benchmark-ss/
+
+      - name: "Merge and Produce Performance Results (social-science)"
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: '"social-science" Benchmark Suite'
+          tool: 'customSmallerIsBetter'
+          output-file-path: benchmark-ss/social-science/social-science-summarized-graph.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          fail-on-alert: false
+          summary-always: false
+          comment-on-alert: true
+          comment-always: true
+          skip-fetch-gh-pages: true
+          max-items-in-chart: 100
+          ref: ${{ inputs.ref }}
+          gh-repository: ${{ github.repository }}
+          benchmark-data-dir-path: wiki/stats/benchmark/
+          auto-push: false
+
+      - name: "⬆️ Push benchmark results"
+        # just an extra guard
+        if: ${{ inputs.push }}
+        # we manipulate the name of the last commit message
+        run: |
+          git reset --soft HEAD~2
+          git add -f wiki/stats/benchmark/
+          git commit -m "[skip ci] doc: new benchmark data"
+
+      - name: Push changes
+        if: ${{ inputs.push }}
+        uses: ad-m/github-push-action@master
+        with:
+          branch: main
+          github_token: ${{ secrets.RELEASE_TOKEN }}
+          force: true

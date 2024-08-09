@@ -1,0 +1,243 @@
+{
+  "name": "@eagleoutice/flowr",
+  "version": "2.0.11",
+  "description": "Static Dataflow Analyzer and Program Slicer for the R Programming Language",
+  "types": "dist/src/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/flowr-analysis/flowr.git"
+  },
+  "homepage": "https://github.com/flowr-analysis/flowr",
+  "bugs": {
+    "url": "https://github.com/flowr-analysis/flowr/issues"
+  },
+  "scripts": {
+    "main": "npm run build:bundle-flowr && node dist/src/cli/flowr.min.js",
+    "flowr": "npm run main --",
+    "main-dev": "ts-node src/cli/flowr.ts",
+    "publish-library": "cp .npmignore package.json README.md LICENSE dist/src/ && cd dist/src && npm publish --access public",
+    "release": "npx release-it --ci",
+    "stats": "ts-node src/cli/statistics-app.ts",
+    "stats-helper": "ts-node src/cli/statistics-helper-app.ts",
+    "slicer": "ts-node src/cli/slicer-app.ts",
+    "benchmark-helper": "ts-node src/cli/benchmark-helper-app.ts",
+    "benchmark": "npm run build && node dist/src/cli/benchmark-app.js",
+    "summarizer": "ts-node src/cli/summarizer-app.ts",
+    "export-quads": "ts-node src/cli/export-quads-app.ts",
+    "capabilities-markdown": "ts-node src/r-bridge/data/print.ts",
+    "build": "tsc --project .",
+    "build:bundle-flowr": "npm run build && esbuild --bundle dist/src/cli/flowr.js --platform=node --bundle --minify --target=node18 --outfile=dist/src/cli/flowr.min.js",
+    "lint-local": "npx eslint --version && npx eslint src/ test/ --rule \"no-warning-comments: off\"",
+    "lint": "npm run license-compat -- --summary && npx eslint --version && npx eslint src/ test/",
+    "license-compat": "license-checker --onlyAllow 'MIT;MIT OR X11;GPLv2;LGPL;GNUGPL;ISC;Apache-2.0;FreeBSD;BSD-2-Clause;clearbsd;ModifiedBSD;BSD-3-Clause;Python-2.0;Unlicense;WTFPL;BlueOak-1.0.0;CC-BY-4.0;CC-BY-3.0;CC0-1.0;0BSD'",
+    "doc": "typedoc",
+    "test": "nyc --no-clean mocha",
+    "performance-test": "func() { cd test/performance/ && bash run-all-suites.sh $1 $2 $3; cd ../../; }; func",
+    "test-full": "npm run test -- --test-installation"
+  },
+  "keywords": [
+    "static code analysis",
+    "R programming language",
+    "R",
+    "programming",
+    "slicing",
+    "dataflow analysis"
+  ],
+  "author": "Florian Sihler",
+  "license": "ISC",
+  "mocha": {
+    "require": "ts-node/register",
+    "timeout": 60000,
+    "spec": "test/**/*.spec.ts",
+    "source-map": true,
+    "recursive": true,
+    "exit": true,
+    "produce-source-map": true
+  },
+  "nyc": {
+    "all": true,
+    "per-file": true,
+    "check-coverage": false,
+    "skip-full": true,
+    "lines": 70,
+    "extension": [
+      ".ts"
+    ],
+    "include": [
+      "src/**/*.ts"
+    ],
+    "reporter": [
+      "text",
+      "lcov",
+      "cobertura"
+    ]
+  },
+  "eslintConfig": {
+    "settings": {
+      "import/resolver": {
+        "node": {
+          "extensions": [
+            ".ts"
+          ]
+        }
+      }
+    },
+    "extends": [
+      "@eagleoutice/eslint-config-flowr"
+    ],
+    "rules": {}
+  },
+  "typedocOptions": {
+    "includeVersion": true,
+    "plugin": [
+      "typedoc-umlclass",
+      "typedoc-plugin-missing-exports",
+      "typedoc-theme-hierarchy"
+    ],
+    "entryPoints": [
+      "src",
+      "test/helper"
+    ],
+    "entryPointStrategy": "expand",
+    "exclude": [
+      "**/node_modules/**/*",
+      "**/index.ts"
+    ],
+    "theme": "hierarchy",
+    "out": "doc",
+    "readme": "README.md",
+    "umlClassDiagram": {
+      "type": "detailed",
+      "location": "embed",
+      "format": "svg",
+      "position": "below",
+      "legendType": "none",
+      "hideEmptyMembers": false,
+      "generatorProcessCount": 4
+    },
+    "lightHighlightTheme": "light-plus",
+    "darkHighlightTheme": "dark-plus",
+    "hideGenerator": false,
+    "searchInComments": true,
+    "useTsLinkResolution": true,
+    "categorizeByGroup": true,
+    "sort": [
+      "static-first",
+      "alphabetical"
+    ],
+    "visibilityFilters": {
+      "protected": true,
+      "private": true,
+      "inherited": true,
+      "external": true
+    },
+    "validation": {
+      "notExported": true,
+      "invalidLink": true,
+      "notDocumented": true
+    },
+    "treatValidationWarningsAsErrors": false
+  },
+  "release-it": {
+    "git": {
+      "commitMessage": "[skip ci] Release v${version}",
+      "requireCleanWorkingDir": true,
+      "tagName": "v${version}",
+      "commit": true,
+      "tag": true,
+      "push": true
+    },
+    "github": {
+      "release": true,
+      "tokenRef": "RELEASE_TOKEN",
+      "releaseName": "Release v${version}",
+      "web": false,
+      "autoGenerate": true,
+      "comments": {
+        "submit": true,
+        "issue": "_This issue has been resolved in v${version} (see [${releaseName}](${releaseUrl}))._",
+        "pr": "_This pull request is included in v${version} (see [${releaseName}](${releaseUrl}))._"
+      }
+    },
+    "npm": {
+      "publish": false
+    },
+    "hooks": {
+      "before:init": [
+        "npm run lint",
+        "npm run test-full"
+      ],
+      "after:bump": "npm run build",
+      "after:git:release": "echo After git push, before github release",
+      "after:release": "echo Successfully released ${name} v${version} to ${repo.repository}."
+    },
+    "plugins": {
+      "@j-ulrich/release-it-regex-bumper": {
+        "out": {
+          "file": "src/util/version.ts",
+          "search": "const version = '[\\d.]+'",
+          "replace": "const version = '{{version}}'"
+        }
+      }
+    }
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.3.0",
+    "@commitlint/config-angular": "^19.3.0",
+    "@eagleoutice/eslint-config-flowr": "^1.0.8",
+    "@j-ulrich/release-it-regex-bumper": "^5.1.0",
+    "@stylistic/eslint-plugin": "^2.1.0",
+    "@stylistic/eslint-plugin-plus": "^2.1.0",
+    "@stylistic/eslint-plugin-ts": "^2.1.0",
+    "@types/chai": "^4.3.16",
+    "@types/chai-as-promised": "^7.1.8",
+    "@types/command-line-args": "^5.2.3",
+    "@types/command-line-usage": "^5.0.4",
+    "@types/mocha": "^10.0.6",
+    "@types/n-readlines": "^1.0.6",
+    "@types/n3": "^1.16.4",
+    "@types/object-hash": "^3.0.6",
+    "@types/semver": "^7.5.6",
+    "@types/tmp": "^0.2.6",
+    "@types/ws": "^8.5.10",
+    "@typescript-eslint/eslint-plugin": "^7.8.0",
+    "chai": "^4.3.16",
+    "chai-as-promised": "^7.1.1",
+    "esbuild": "0.21.3",
+    "eslint": "^8.57.0",
+    "eslint-plugin-check-file": "^2.8.0",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-n": "^17.6.0",
+    "eslint-plugin-promise": "^6.1.1",
+    "eslint-plugin-tsdoc": "^0.2.17",
+    "license-checker": "^25.0.1",
+    "mocha": "^10.2.0",
+    "mocha-multi-reporters": "^1.5.1",
+    "nyc": "^15.1.0",
+    "release-it": "^17.0.1",
+    "ts-node": "^10.9.2",
+    "typedoc": "^0.25.13",
+    "typedoc-plugin-missing-exports": "^2.2.0",
+    "typedoc-theme-hierarchy": "^4.1.2",
+    "typedoc-umlclass": "^0.9.0",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "@xmldom/xmldom": "^0.8.10",
+    "command-line-args": "^5.2.1",
+    "command-line-usage": "^7.0.1",
+    "joi": "^17.13.1",
+    "n-readlines": "^1.0.1",
+    "n3": "^1.17.2",
+    "object-hash": "^3.0.0",
+    "object-sizeof": "^2.6.4",
+    "rotating-file-stream": "^3.1.1",
+    "semver": "^7.5.4",
+    "tar": "^7.1.0",
+    "tmp": "^0.2.3",
+    "ts-essentials": "^9.4.1",
+    "tslog": "^4.9.2",
+    "ws": "^8.17.0",
+    "xpath-ts2": "^1.4.2"
+  }
+}

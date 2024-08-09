@@ -1,0 +1,55 @@
+name: Bug Report
+description: File a bug report
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for taking the time to fill out this bug report!
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Also tell us, what did you expect to happen? Please make sure to include the way that you used flowR (e.g., the command you used).
+      placeholder: Tell us what you see!
+      value: "A bug happened when using the server!"
+    validations:
+      required: true
+  - type: input
+    id: r-version
+    attributes:
+      label: What version of R do you have installed?
+      description: "You can use `R --version` to find out (with docker: `docker run --rm flowr --version`)."
+      placeholder: ex. 4.2.3
+    validations:
+      required: false
+  - type: input
+    id: flowr-version
+    attributes:
+      label: What version of flowR did you use?
+      description: "You can run flowr as `flowr --version` to find out (with docker: `docker run --rm flowr --version`)."
+      placeholder: ex. 1.1.0 or 'dev-<commit-hash>'
+    validations:
+      required: true
+  - type: textarea
+    id: code
+    attributes:
+      label: Related input code
+      description: If applicable, please copy and paste the input code here, best as a [MWE](https://stackoverflow.com/help/minimal-reproducible-example).
+      render: R
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
+      render: Shell
+  - type: checkboxes
+    id: urgent
+    attributes:
+      label: Meta Information
+      options:
+        - label: The Issue is Urgent
+          required: false
+        - label: I Used the Dockerized Version of flowr
+          required: false

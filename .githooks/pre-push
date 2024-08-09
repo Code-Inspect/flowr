@@ -1,0 +1,54 @@
+#!/bin/sh
+command -v git-lfs >/dev/null 2>&1 || { echo >&2 "\nThis repository is configured for Git LFS but 'git-lfs' was not found on your path. If you no longer wish to use Git LFS, remove this hook by deleting the 'pre-push' file in the hooks directory (set by 'core.hookspath'; usually '.git/hooks').\n"; exit 2; }
+git lfs pre-push "$@"
+
+set -eu
+
+. .githooks/load-npm.sh
+
+reset() {
+  echo "Cleaning up and return control"
+  rm -r "$flowrtmpdir"
+  cd "$curdir"
+}
+
+unclean=false
+if [ -n "$(git status --porcelain)" ]; then
+  # if we directly assign the test set -eu will not approve
+  unclean=true
+  trap reset EXIT
+  echo "Working tree is not clean, so we reset in temporary folder"
+  # backwards compatible platform independence
+  flowrtmpdir=$(mktemp -d 2>/dev/null || mktemp -d -t 'flowrtmpdir')
+  echo "Using temporary folder $flowrtmpdir"
+
+  curdir=$(pwd)
+
+  echo "Cloning copy..." # cloning obeys gitignore
+  git clone . "$flowrtmpdir"
+  echo "Keep installed packages..."
+  cp -r node_modules/ "$flowrtmpdir/node_modules"
+  cd "$flowrtmpdir"
+
+  git reset --hard
+  echo "Setup completed."
+fi
+
+echo "Linting project (local mode)..."
+$NPM_CMD run lint-local
+
+
+# shellcheck disable=SC2124 # we want the argument splitting
+args="$@"
+lfspre() {
+  if $unclean; then
+    reset
+  fi
+  command -v git-lfs >/dev/null 2>&1 || { echo >&2 "\nThis repository is configured for Git LFS but 'git-lfs' was not found on your path. If you no longer wish to use Git LFS, remove this hook by deleting '.git/hooks/pre-push'.\n"; exit 2; }
+  # we want the argument splitting
+  git lfs pre-push $args
+}
+
+# we register it as a trap after lint so that it 1) triggers only if lint-local succeeded
+# but 2) only triggers *after* the directory recovery completed
+trap lfspre EXIT

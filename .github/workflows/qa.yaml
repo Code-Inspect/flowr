@@ -1,0 +1,99 @@
+name: "QA"
+# Runs on each push and tests flowR for the default configuration
+# Depending on the targets etc. this may perform many more checks!
+
+'on':
+  push:
+    paths-ignore:
+      - '**/*.md'
+      - 'LICENSE'
+      - '.gitignore'
+      - 'scripts/**'
+  pull_request:
+    types: [ opened, synchronize ]
+    branches: [ main ]
+    paths-ignore:
+      - '**/*.md'
+      - 'LICENSE'
+      - '.gitignore'
+      - 'scripts/**'
+  workflow_dispatch:
+    inputs:
+      force-full:
+        description: "Force all steps"
+        required: true
+        default: false
+        type: boolean
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  deployments: write
+  contents:    write
+
+jobs:
+  debug:
+    name: "Debug"
+    runs-on: ubuntu-latest
+    steps:
+    - name: "Debug state"
+      run: |
+        echo "Event: ${{ github.event_name }}"
+        echo "Ref: ${{ github.ref }}"
+        echo "Base Ref: ${{ github.base_ref }}"
+
+  lint:
+    needs: [ debug ]
+    name: "Linting (Local)"
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.base.ref != 'main' }}
+    uses: flowr-analysis/flowr/.github/workflows/run.yaml@main
+    with:
+      r-version: ''
+      action:    lint-local
+
+  test:
+    needs: [ debug ]
+    name: "Test Suite (coverage)"
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.base.ref != 'main' }}
+    uses: flowr-analysis/flowr/.github/workflows/run.yaml@main
+    with:
+      action: test-full -- --forbid-only
+      coverage: true
+    secrets: inherit
+
+  performance-test:
+    needs: [ test ]
+    name: "Performance Test"
+    # we do not run if the release workflow runs it with pushing
+    if: ${{
+              always()
+          && !failure()
+          && (inputs.force-full || (github.event_name == 'push' && github.ref == 'refs/heads/main'))
+          && !(
+                startsWith(github.event.head_commit.message, '[release:minor]') ||
+                startsWith(github.event.head_commit.message, '[release:major]') ||
+                startsWith(github.event.head_commit.message, '[release:patch]')
+              )
+      }}
+    uses: flowr-analysis/flowr/.github/workflows/performance-test.yaml@main
+    with:
+      push: false
+    secrets: inherit
+
+  full-test:
+    needs: [ lint ]
+    name: "Full Test Suite"
+    if: ${{
+              always()
+          && !failure()
+          && (inputs.force-full || (github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main'))
+      }}
+    uses: flowr-analysis/flowr/.github/workflows/full-test.yaml@main
+
+  deploy-doc:
+    needs: [ test, full-test, performance-test ]
+    name: "Deploy Doc. (only on main)"
+    if: ${{ always() && !failure() && (inputs.force-full || (github.event_name == 'push' && github.ref == 'refs/heads/main')) }}
+    uses: flowr-analysis/flowr/.github/workflows/deploy-doc.yaml@main

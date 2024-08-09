@@ -1,0 +1,37 @@
+name: "Full Test"
+
+# Should only run on pull request to main or if forced (but even then as part of the QA workflow)
+'on':
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  lint:
+    name: "Linting (Full)"
+    uses: flowr-analysis/flowr/.github/workflows/run.yaml@main
+    with:
+      r-version: ''
+      action: lint-local
+
+  test-full:
+    strategy:
+      fail-fast: false
+      matrix:
+        r-version: [ '4.4.0', '4.3.2', '4.2.3', '4.0.0', '3.6.0' ]
+        os: [ ubuntu-latest ]
+        include:
+           - os: macos-latest
+             r-version: '4.4.0'
+           - os: windows-latest
+             r-version: '4.4.0'
+    name: "Test Suite (full)"
+    uses: flowr-analysis/flowr/.github/workflows/run.yaml@main
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.r-version }}-${{ matrix.os }}
+      cancel-in-progress: true
+    with:
+      timeout-minutes: 25
+      r-version: ${{ matrix.r-version }}
+      image: ${{ matrix.os }}
+      action: test-full -- --forbid-only
+      coverage: false

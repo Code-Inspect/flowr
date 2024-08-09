@@ -1,0 +1,104 @@
+name: "Run one of flowR's npm-actions with a specific version"
+
+'on':
+  workflow_call:
+    inputs:
+      node-version:
+        description: "The node version to use"
+        required: false
+        default: "18.15.x"
+        type: string
+      r-version:
+        description: "The R version to use"
+        required: false
+        default: "4.4.0"
+        type: string
+      action:
+        description: "The action to run"
+        required: true
+        type: string
+      image:
+        description: "The image to use for running"
+        required: false
+        default: "ubuntu-22.04"
+        type: string
+      timeout-minutes:
+        description: "The timeout in minutes"
+        required: false
+        default: 10
+        type: number
+      coverage:
+        description: "Whether to upload coverage reports at the end"
+        required: false
+        default: false
+        type: boolean
+      benchmark:
+        description: "Name to use to report and upload benchmark results at the end"
+        required: false
+        default: ''
+        type: string
+      submodule-deps:
+        description: "Whether to install the npm dependencies of submodules"
+        required: false
+        default: false
+        type: boolean
+
+
+jobs:
+  flowr-action:
+    runs-on: ${{ inputs.image }}
+    timeout-minutes: ${{ inputs.timeout-minutes }}
+    steps:
+      - name: "Setup the Environment"
+        uses: flowr-analysis/flowr/.github/actions/setup@main
+        with:
+          node-version: ${{ inputs.node-version }}
+          r-version: ${{ inputs.r-version }}
+
+      - name: Install Node Dependencies
+        run: npm ci
+
+      - name: Install Graphviz for Documentation
+        # we expect this to only work on Linux/Ubuntu
+        if: ${{ inputs.action == 'doc' }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install graphviz
+
+      - name: "Run the corresponding action '${{ inputs.action }}'"
+        run:
+          npm run ${{ inputs.action }}
+
+      - name: Upload Coverage Reports to Codecov
+        if: ${{ inputs.coverage }}
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+
+      - name: Commit New Documentation
+        if: ${{ inputs.action == 'doc' }}
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add -f "doc/"
+          if [ -d "wiki/stats/" ]; then git add -f "wiki/stats/"; fi
+          git commit -m "Update documentation"
+          # make the branch an orphan
+          git checkout --orphan gh-pages-orphan-tmp
+          git commit -m "Current documentation stage"
+
+      - name: Push New Documentation
+        if: ${{ inputs.action == 'doc' }}
+        uses: ad-m/github-push-action@master
+        with:
+          branch: gh-pages
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          force: true
+
+      - name: Upload Benchmark Results
+        if: ${{ inputs.benchmark != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results-${{ inputs.benchmark }}
+          path: test/performance/results/

@@ -1,0 +1,17 @@
+name: "Deploy Documentation"
+
+'on':
+  workflow_call:
+
+
+concurrency:
+  group: doc-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  doc:
+    name: "Build and Deploy Documentation"
+    uses: flowr-analysis/flowr/.github/workflows/run.yaml@main
+    with:
+      r-version: ''
+      action: doc

@@ -1,0 +1,70 @@
+{
+  "projectName": "flowr",
+  "projectOwner": "flowr-analysis",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 100,
+  "commit": true,
+  "commitConvention": "angular",
+  "contributors": [
+    {
+      "login": "EagleoutIce",
+      "name": "Florian Sihler",
+      "avatar_url": "https://avatars.githubusercontent.com/u/9303573?v=4",
+      "profile": "https://github.com/EagleoutIce",
+      "contributions": [
+        "code", "ideas", "maintenance", "projectManagement", "research", "test", "talk"
+      ]
+    },
+    {
+      "login": "Ellpeck",
+      "name": "Ell",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5741138?v=4",
+      "profile": "https://ellpeck.de/",
+      "contributions": [
+        "code", "maintenance", "test", "plugin"
+      ]
+    },
+    {
+      "login": "LukasPietzschmann",
+      "name": "Lukas Pietzschmann",
+      "avatar_url": "https://avatars.githubusercontent.com/u/49213919?v=4",
+      "profile": "https://lukas.pietzschmann.org/",
+      "contributions": [
+        "code", "test"
+      ]
+    },
+    {
+      "login": "bjthehun",
+      "name": "Benedikt Jutz",
+      "avatar_url": "https://avatars.githubusercontent.com/u/38729215?v=4",
+      "profile": "https://github.com/bjthehun",
+      "contributions": [
+        "code", "test"
+      ]
+    },
+    {
+      "login": "Core5563",
+      "name": "Core5563",
+      "avatar_url": "https://avatars.githubusercontent.com/u/140061253?v=4",
+      "profile": "https://github.com/Core5563",
+      "contributions": [
+        "code", "test"
+      ]
+    },
+    {
+      "login": "Ehcsan",
+      "name": "Ehcsan",
+      "avatar_url": "https://avatars.githubusercontent.com/u/68707578?v=4",
+      "profile": "https://github.com/Ehcsan",
+      "contributions": [
+        "code", "test"
+      ]
+    }
+  ],
+  "contributorsPerLine": 7,
+  "linkToUsage": true
+}

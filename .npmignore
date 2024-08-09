@@ -1,0 +1,23 @@
+node_modules/
+
+/wiki
+
+# Logs
+*.log
+
+.git*
+
+# Coverage
+/.nyc_output
+/coverage
+
+# IDE specific
+/.vscode/
+/.project/
+/.settings/
+
+/.DS_Store
+src/**
+test/**
+**/*.map
+.idea/

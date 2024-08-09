@@ -1,0 +1,25 @@
+coverage:
+  precision: 2
+  round: down       # round coverage value
+  range: "80...100" # should be green in that range
+  status:
+    project:
+      default:
+        target:         80%  # the required coverage value
+        threshold:       1%  # the leniency in hitting the target
+        informational: true  # do not fail if we do not hit
+    patch:
+      default:
+        informational: true  # do not fail if we do not hit
+
+codecov:
+  notify:
+    after_n_builds: 1
+    wait_for_ci: true
+
+parsers:
+  javascript:
+    enable_partials: true
+
+github_checks:
+  annotations: true

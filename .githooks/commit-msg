@@ -1,0 +1,7 @@
+#!/bin/sh
+
+. .githooks/load-npm.sh
+
+message_file="${1}"
+$NPX_CMD commitlint --config '.github/.commitlintrc.json' --edit "${message_file}" ||
+  (printf "Run the following to fix the commit message:\n\ngit commit --edit --file=\"%s\"\n" "${message_file}" && exit 1)

@@ -1,0 +1,10 @@
+* [*flowR* Home](https://github.com/flowr-analysis/flowr/wiki)
+  * [Setup](https://github.com/flowr-analysis/flowr/wiki/Setup)
+  * [Overview](https://github.com/flowr-analysis/flowr/wiki/Overview)
+  * [Interface](https://github.com/flowr-analysis/flowr/wiki/Interface)
+  * [Core](https://github.com/flowr-analysis/flowr/wiki/Core)
+  * [Linting and Testing](https://github.com/flowr-analysis/flowr/wiki/Linting-and-Testing)
+* Extra Information
+  * [Terminology](https://github.com/flowr-analysis/flowr/wiki/Terminology)
+  * [R's Capabilities](https://github.com/flowr-analysis/flowr/wiki/Capabilities) & [Tokens](https://github.com/flowr-analysis/flowr/wiki/Tokens)
+  * [Original Master Thesis](https://github.com/flowr-analysis/flowr/wiki/Thesis)
