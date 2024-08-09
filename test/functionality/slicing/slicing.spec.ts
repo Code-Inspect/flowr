@@ -11,4 +11,7 @@ describe('Slicing', () => {
 	describe('Slicing-Criterion', () => {
 		requireAllTestsInFolder(path.join(__dirname, 'slicing-criterion'))
 	})
+	describe('Forward Slicing', () => {
+		requireAllTestsInFolder(path.join(__dirname, 'forward-slicing'))
+	})
 })
